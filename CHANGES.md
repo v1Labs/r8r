@@ -2,7 +2,7 @@
 
 All notable changes to R8R will be documented in this file.
 
-## [1.0.2] - 2024-01-XX
+## [1.0.2] - 2025-07-03
 
 ### 🚀 Major API Improvements
 - **Refactored API for better usability**: Removed `customTheme` object in favor of direct theme properties
@@ -51,7 +51,7 @@ All notable changes to R8R will be documented in this file.
 - **Direct theme overrides**: Override any theme property directly as props
 - **Enhanced color system**: Individual dataset colors or global color array
 
-## [1.0.1] - 2024-01-XX
+## [1.0.1] - 2025-07-03
 
 ### 🎉 Initial Release
 - **Core radar chart functionality**: Basic single and dual dataset visualization

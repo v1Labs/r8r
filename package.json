@@ -1,6 +1,6 @@
 {
   "name": "r8r",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A modern, zero-dependency radar (spider) chart for visual comparisons in React",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -42,12 +42,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/r8r.git"
+    "url": "git+https://github.com/v1labs/r8r.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/r8r/issues"
+    "url": "https://github.com/v1labs/r8r/issues"
   },
-  "homepage": "https://github.com/yourusername/r8r#readme",
+  "homepage": "https://github.com/v1labs/r8r#readme",
   "dependencies": {
     "tslib": "^2.8.1"
   }

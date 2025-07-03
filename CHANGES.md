@@ -2,6 +2,67 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.3] - 2025-01-27
+
+### 🎯 Enhanced Value Display & Interaction
+- **Fixed `showValues` functionality**: Now properly displays `maxValue` at the end of each spoke
+- **Smart value positioning**: Max values are positioned under axis labels with intelligent vertical alignment
+- **Interactive hover values**: Values appear as colored badges on the chart when hovering over legend items
+- **Clean default state**: Removed default data point circles for cleaner visual appearance
+- **Professional value badges**: Highlighted values appear as colored circles with white text for excellent readability
+
+### 🎨 Legend & Label Improvements
+- **Vertically centered legend**: Legend labels are now properly centered within the chart container
+- **Enhanced hover effects**: Hover over legend items to see detailed value breakdowns on the chart
+- **Improved visual feedback**: Better hover states and transitions for legend items
+- **Smart label positioning**: Labels and max values use precise positioning with `dy` offsets for optimal spacing
+
+### 🌟 Dataset Highlighting & Visual Hierarchy
+- **Smart highlighting system**: When hovering over a dataset in the legend, other datasets become grayscale
+- **Enhanced visual hierarchy**: Highlighted datasets maintain full color while others fade to grayscale with opacity
+- **Smooth transitions**: All highlighting changes are animated for better user experience
+- **Better color management**: Improved grayscale conversion algorithm for highlighting
+
+### 📊 New Examples & Enhanced Documentation
+- **3-Dimension Analysis**: Simple three-dimensional comparison showcasing basic radar chart usage
+- **8-Dimension Assessment**: Comprehensive evaluation with eight different criteria
+- **Enhanced existing examples**: Updated all examples to showcase new features like hover effects and maxValue display
+- **Improved control labels**: Updated UI controls to better reflect new functionality
+
+### 🔧 Technical Improvements
+- **Better positioning calculations**: Implemented precise `dy` offset positioning for labels and values
+- **Enhanced state management**: Added hover state tracking for better interactivity
+- **Improved grid visibility**: Darkened grid lines for better reference and readability
+- **Optimized rendering**: More efficient updates when hovering over legend items
+- **Consistent positioning logic**: Labels and max values use consistent base positioning with smart offsets
+
+### 🎯 API Enhancements
+```typescript
+// New hover functionality automatically works when showValues is true
+<R8R 
+  data={data}
+  chart={chart}
+  showValues={true}  // Enables interactive value display on hover
+  showLegend={true}
+/>
+```
+
+### ✨ New Features
+- **MaxValue display**: Shows the maximum possible value at the end of each spoke with smart positioning
+- **Interactive value badges**: Colored circles with white text appear on chart when hovering legend items
+- **Dataset highlighting**: Visual emphasis on selected datasets with grayscale effect for others
+- **Vertical legend centering**: Better visual balance in the chart layout
+- **Precise label positioning**: Intelligent positioning system using `dy` offsets for optimal readability
+- **Enhanced grid visibility**: Darker grid lines for better chart reference
+- **Clean default appearance**: Removed visual clutter while maintaining full functionality
+
+### 🎨 Visual Design Improvements
+- **Professional value badges**: 12px radius colored circles with white, bold text
+- **Better typography**: Larger, bolder max values (14px, weight 700) with consistent label sizing
+- **Improved spacing**: 15px `dy` offsets provide optimal separation between labels and values
+- **Enhanced contrast**: White text on colored backgrounds ensures excellent readability
+- **Smooth animations**: All interactive elements have smooth transitions for better UX
+
 ## [1.0.2] - 2025-07-03
 
 ### 🚀 Major API Improvements

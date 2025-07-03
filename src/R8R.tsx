@@ -63,14 +63,14 @@ const themes: Record<string, {
 }> = {
   light: {
     backgroundColor: '#ffffff',
-    gridColor: '#e5e7eb',
+    gridColor: '#d1d5db',
     textColor: '#374151',
     legendBackgroundColor: '#f9fafb',
     legendBorderColor: '#e5e7eb',
   },
   dark: {
     backgroundColor: '#1f2937',
-    gridColor: '#374151',
+    gridColor: '#4b5563',
     textColor: '#f9fafb',
     legendBackgroundColor: '#111827',
     legendBorderColor: '#374151',
@@ -114,6 +114,7 @@ const R8R: React.FC<R8RProps> = ({
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [visibleDatasets, setVisibleDatasets] = useState<Set<number>>(new Set(data.map((_, index) => index)));
+  const [hoveredDataset, setHoveredDataset] = useState<number | null>(null);
 
   // Merge theme with custom overrides
   const currentTheme = useMemo(() => {
@@ -176,6 +177,7 @@ const R8R: React.FC<R8RProps> = ({
         label: point.label,
         value,
         maxValue: point.maxValue || maxValue,
+        angle,
       };
     });
   };
@@ -251,6 +253,20 @@ const R8R: React.FC<R8RProps> = ({
     setVisibleDatasets(newVisible);
   };
 
+  // Get dataset color with opacity based on highlighting
+  const getDatasetColor = (index: number, baseColor: string) => {
+    if (hoveredDataset === null) return baseColor;
+    if (hoveredDataset === index) return baseColor;
+    
+    // Convert to grayscale with opacity for non-highlighted datasets
+    const hex = baseColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+    return `rgba(${gray}, ${gray}, ${gray}, 0.3)`;
+  };
+
   // Animation effect
   useEffect(() => {
     setIsAnimating(true);
@@ -283,6 +299,7 @@ const R8R: React.FC<R8RProps> = ({
             backgroundColor: currentTheme.legendBackgroundColor,
             display: 'flex',
             flexDirection: 'column',
+            justifyContent: 'center',
             gap: '8px',
           }}
         >
@@ -296,10 +313,15 @@ const R8R: React.FC<R8RProps> = ({
           </h3>
           {allDatasetPoints.map(({ dataset, color, index }) => {
             const isVisible = visibleDatasets.has(index);
+            const isHovered = hoveredDataset === index;
+            const displayColor = getDatasetColor(index, color);
+            
             return (
               <div
                 key={index}
                 onClick={() => toggleDataset(index)}
+                onMouseEnter={() => setHoveredDataset(index)}
+                onMouseLeave={() => setHoveredDataset(null)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -312,17 +334,20 @@ const R8R: React.FC<R8RProps> = ({
                   borderRadius: '4px',
                   backgroundColor: isVisible ? `${color}20` : 'transparent',
                   border: `1px solid ${isVisible ? color : 'transparent'}`,
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
                 }}
               >
                 <div style={{
                   width: '12px',
                   height: '12px',
-                  backgroundColor: color,
+                  backgroundColor: displayColor,
                   borderRadius: '2px',
                   opacity: isVisible ? 1 : 0.5
                 }} />
-                {dataset.label}
+                <div style={{ flex: 1 }}>
+                  <div>{dataset.label}</div>
+                </div>
               </div>
             );
           })}
@@ -367,8 +392,9 @@ const R8R: React.FC<R8RProps> = ({
             />
             {showLabels && (
               <text
-                x={line.x2 + Math.cos(line.angle) * 20}
-                y={line.y2 + Math.sin(line.angle) * 20}
+                x={line.x2 + Math.cos(line.angle) * 15}
+                y={line.y2 + Math.sin(line.angle) * 15}
+                dy={line.y2 > chartConfig.centerY ? 15 : -15}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize="12"
@@ -378,6 +404,17 @@ const R8R: React.FC<R8RProps> = ({
                 {line.label}
               </text>
             )}
+            <text
+              x={line.x2 + Math.cos(line.angle) * 15}
+              y={line.y2 + Math.sin(line.angle) * 15}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="14"
+              fill={currentTheme.textColor}
+              fontWeight="700"
+            >
+              {chart[index].maxValue || 100}
+            </text>
           </g>
         ))}
 
@@ -385,39 +422,42 @@ const R8R: React.FC<R8RProps> = ({
         {allDatasetPoints.map(({ dataset, points, color, index }) => {
           if (!visibleDatasets.has(index)) return null;
           
+          const displayColor = getDatasetColor(index, color);
+          
           return (
             <g key={`dataset-${index}`}>
               <path
                 d={createPolygonPath(points)}
-                fill={color}
+                fill={displayColor}
                 fillOpacity="0.2"
-                stroke={color}
+                stroke={displayColor}
                 strokeWidth="2"
                 strokeOpacity="0.8"
               />
               {/* Data points */}
               {points.map((point, pointIndex) => (
                 <g key={`point-${index}-${pointIndex}`}>
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r="4"
-                    fill={color}
-                    stroke="white"
-                    strokeWidth="2"
-                  />
-                  {showValues && (
-                    <text
-                      x={point.x}
-                      y={point.y - 15}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fontSize="10"
-                      fill={currentTheme.textColor}
-                      fontWeight="600"
-                    >
-                      {point.value}
-                    </text>
+                  {hoveredDataset === index && (
+                    <>
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r="12"
+                        fill={displayColor}
+                        opacity="0.9"
+                      />
+                      <text
+                        x={point.x}
+                        y={point.y}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize="10"
+                        fill="white"
+                        fontWeight="700"
+                      >
+                        {point.value}
+                      </text>
+                    </>
                   )}
                 </g>
               ))}

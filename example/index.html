@@ -265,6 +265,102 @@ const data = [
   showGrid={true}
   showLabels={true}
   showLegend={true}
+  showValues={true}
+/&gt;
+                </div>
+            </div>
+
+            <div class="example">
+                <h3>3-Dimension Analysis</h3>
+                <p>Simple three-dimensional comparison with enhanced hover effects</p>
+                <div class="chart-container" id="three-dim-chart"></div>
+                <div class="code">
+const chart = [
+  { label: 'Quality', value: 0, maxValue: 100 },
+  { label: 'Speed', value: 0, maxValue: 100 },
+  { label: 'Cost', value: 0, maxValue: 100 }
+];
+
+const data = [
+  {
+    label: 'Option A',
+    values: { 'Quality': 90, 'Speed': 70, 'Cost': 85 }
+  },
+  {
+    label: 'Option B',
+    values: { 'Quality': 75, 'Speed': 95, 'Cost': 60 }
+  },
+  {
+    label: 'Option C',
+    values: { 'Quality': 85, 'Speed': 80, 'Cost': 90 }
+  }
+];
+
+&lt;R8R 
+  data={data}
+  chart={chart}
+  colors={['#3b82f6', '#ef4444', '#10b981']}
+  showValues={true}
+  showLegend={true}
+  legendTitle="Options"
+/&gt;
+                </div>
+            </div>
+
+            <div class="example">
+                <h3>8-Dimension Assessment</h3>
+                <p>Comprehensive evaluation with eight different criteria</p>
+                <div class="chart-container" id="eight-dim-chart"></div>
+                <div class="code">
+const chart = [
+  { label: 'Technical Skills', value: 0, maxValue: 100 },
+  { label: 'Communication', value: 0, maxValue: 100 },
+  { label: 'Leadership', value: 0, maxValue: 100 },
+  { label: 'Problem Solving', value: 0, maxValue: 100 },
+  { label: 'Teamwork', value: 0, maxValue: 100 },
+  { label: 'Innovation', value: 0, maxValue: 100 },
+  { label: 'Adaptability', value: 0, maxValue: 100 },
+  { label: 'Results', value: 0, maxValue: 100 }
+];
+
+const data = [
+  {
+    label: 'Employee A',
+    values: { 
+      'Technical Skills': 95, 
+      'Communication': 85, 
+      'Leadership': 70, 
+      'Problem Solving': 90,
+      'Teamwork': 88,
+      'Innovation': 75,
+      'Adaptability': 82,
+      'Results': 92
+    }
+  },
+  {
+    label: 'Employee B',
+    values: { 
+      'Technical Skills': 80, 
+      'Communication': 95, 
+      'Leadership': 90, 
+      'Problem Solving': 85,
+      'Teamwork': 95,
+      'Innovation': 88,
+      'Adaptability': 90,
+      'Results': 85
+    }
+  }
+];
+
+&lt;R8R 
+  data={data}
+  chart={chart}
+  colors={['#8b5cf6', '#f59e0b']}
+  showValues={true}
+  showLegend={true}
+  legendTitle="Performance Review"
+  width={500}
+  height={500}
 /&gt;
                 </div>
             </div>
@@ -295,20 +391,21 @@ const data = [
             
             const [visibleDatasets, setVisibleDatasets] = useState(new Set(data.map((_, i) => i)));
             const [isAnimating, setIsAnimating] = useState(false);
+            const [hoveredDataset, setHoveredDataset] = useState(null);
             
             // Simple theme implementation
             const themes = {
                 light: { 
                     bg: '#ffffff', 
                     text: '#374151', 
-                    grid: '#e5e7eb',
+                    grid: '#d1d5db',
                     legendBg: '#f9fafb',
                     legendBorder: '#e5e7eb'
                 },
                 dark: { 
                     bg: '#1f2937', 
                     text: '#f9fafb', 
-                    grid: '#374151',
+                    grid: '#4b5563',
                     legendBg: '#111827',
                     legendBorder: '#374151'
                 }
@@ -338,6 +435,34 @@ const data = [
                     return `${centerX + pointRadius * Math.cos(angle)},${centerY + pointRadius * Math.sin(angle)}`;
                 });
                 return points.join(' ');
+            };
+
+            const calculatePoints = (dataset, color) => {
+                const angleStep = (2 * Math.PI) / chart.length;
+                return chart.map((point, index) => {
+                    const angle = index * angleStep - Math.PI / 2;
+                    const value = dataset.values[point.label] || 0;
+                    const pointRadius = radius * (value / (point.maxValue || 100));
+                    return {
+                        x: centerX + pointRadius * Math.cos(angle),
+                        y: centerY + pointRadius * Math.sin(angle),
+                        value,
+                        angle
+                    };
+                });
+            };
+
+            const getDatasetColor = (index, baseColor) => {
+                if (hoveredDataset === null) return baseColor;
+                if (hoveredDataset === index) return baseColor;
+                
+                // Convert to grayscale with opacity for non-highlighted datasets
+                const hex = baseColor.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                return `rgba(${gray}, ${gray}, ${gray}, 0.3)`;
             };
             
             const toggleDataset = (index) => {
@@ -377,6 +502,7 @@ const data = [
                             backgroundColor: currentTheme.legendBg,
                             display: 'flex',
                             flexDirection: 'column',
+                            justifyContent: 'center',
                             gap: '8px'
                         }}>
                             {legendTitle && (
@@ -391,11 +517,16 @@ const data = [
                             )}
                             {data.map((dataset, index) => {
                                 const isVisible = visibleDatasets.has(index);
+                                const isHovered = hoveredDataset === index;
                                 const color = dataset.color || colors[index % colors.length];
+                                const displayColor = getDatasetColor(index, color);
+                                
                                 return (
                                     <div
                                         key={index}
                                         onClick={() => toggleDataset(index)}
+                                        onMouseEnter={() => setHoveredDataset(index)}
+                                        onMouseLeave={() => setHoveredDataset(null)}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -408,17 +539,20 @@ const data = [
                                             borderRadius: '4px',
                                             backgroundColor: isVisible ? `${color}20` : 'transparent',
                                             border: `1px solid ${isVisible ? color : 'transparent'}`,
-                                            transition: 'all 0.2s ease'
+                                            transition: 'all 0.2s ease',
+                                            position: 'relative'
                                         }}
                                     >
                                         <div style={{
                                             width: '12px',
                                             height: '12px',
-                                            backgroundColor: color,
+                                            backgroundColor: displayColor,
                                             borderRadius: '2px',
                                             opacity: isVisible ? 1 : 0.5
                                         }} />
-                                        {dataset.label}
+                                        <div style={{ flex: 1 }}>
+                                            <div>{dataset.label}</div>
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -459,8 +593,9 @@ const data = [
                                     />
                                     {showLabels && (
                                         <text
-                                            x={endX + Math.cos(angle) * 20}
-                                            y={endY + Math.sin(angle) * 20}
+                                            x={endX + Math.cos(angle) * 15}
+                                            y={endY + Math.sin(angle) * 15}
+                                            dy={endY > centerY ? 15 : -15}
                                             textAnchor="middle"
                                             dominantBaseline="middle"
                                             fontSize="12"
@@ -469,23 +604,65 @@ const data = [
                                             {point.label}
                                         </text>
                                     )}
+                                    <text
+                                        x={endX + Math.cos(angle) * 15}
+                                        y={endY + Math.sin(angle) * 15}
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                        fontSize="14"
+                                        fill={currentTheme.text}
+                                        fontWeight="700"
+                                    >
+                                        {point.maxValue || 100}
+                                    </text>
                                 </g>
                             );
                         })}
                         
-                        {/* Dataset polygons */}
+                        {/* Dataset polygons and data points */}
                         {data.map((dataset, index) => {
                             if (!visibleDatasets.has(index)) return null;
                             const color = dataset.color || colors[index % colors.length];
+                            const displayColor = getDatasetColor(index, color);
+                            const points = calculatePoints(dataset, color);
+                            
                             return (
-                                <polygon
-                                    key={index}
-                                    points={createPolygon(dataset, color)}
-                                    fill={color}
-                                    fillOpacity="0.2"
-                                    stroke={color}
-                                    strokeWidth="2"
-                                />
+                                <g key={index}>
+                                    <polygon
+                                        points={createPolygon(dataset, color)}
+                                        fill={displayColor}
+                                        fillOpacity="0.2"
+                                        stroke={displayColor}
+                                        strokeWidth="2"
+                                    />
+                                    {/* Data points */}
+                                    {points.map((point, pointIndex) => (
+                                        <g key={`point-${index}-${pointIndex}`}>
+                                            {hoveredDataset === index && (
+                                                <>
+                                                    <circle
+                                                        cx={point.x}
+                                                        cy={point.y}
+                                                        r="12"
+                                                        fill={displayColor}
+                                                        opacity="0.9"
+                                                    />
+                                                    <text
+                                                        x={point.x}
+                                                        y={point.y}
+                                                        textAnchor="middle"
+                                                        dominantBaseline="middle"
+                                                        fontSize="10"
+                                                        fill="white"
+                                                        fontWeight="700"
+                                                    >
+                                                        {point.value}
+                                                    </text>
+                                                </>
+                                            )}
+                                        </g>
+                                    ))}
+                                </g>
                             );
                         })}
                     </svg>
@@ -566,6 +743,69 @@ const data = [
             {
                 label: 'Server C',
                 values: { 'CPU': 95, 'Memory': 70, 'Storage': 85, 'Network': 88, 'Graphics': 75 }
+            }
+        ];
+
+        // 3-Dimension chart data
+        const threeDimChart = [
+            { label: 'Quality', value: 0, maxValue: 100 },
+            { label: 'Speed', value: 0, maxValue: 100 },
+            { label: 'Cost', value: 0, maxValue: 100 }
+        ];
+
+        const threeDimData = [
+            {
+                label: 'Option A',
+                values: { 'Quality': 90, 'Speed': 70, 'Cost': 85 }
+            },
+            {
+                label: 'Option B',
+                values: { 'Quality': 75, 'Speed': 95, 'Cost': 60 }
+            },
+            {
+                label: 'Option C',
+                values: { 'Quality': 85, 'Speed': 80, 'Cost': 90 }
+            }
+        ];
+
+        // 8-Dimension chart data
+        const eightDimChart = [
+            { label: 'Technical Skills', value: 0, maxValue: 100 },
+            { label: 'Communication', value: 0, maxValue: 100 },
+            { label: 'Leadership', value: 0, maxValue: 100 },
+            { label: 'Problem Solving', value: 0, maxValue: 100 },
+            { label: 'Teamwork', value: 0, maxValue: 100 },
+            { label: 'Innovation', value: 0, maxValue: 100 },
+            { label: 'Adaptability', value: 0, maxValue: 100 },
+            { label: 'Results', value: 0, maxValue: 100 }
+        ];
+
+        const eightDimData = [
+            {
+                label: 'Employee A',
+                values: { 
+                    'Technical Skills': 95, 
+                    'Communication': 85, 
+                    'Leadership': 70, 
+                    'Problem Solving': 90,
+                    'Teamwork': 88,
+                    'Innovation': 75,
+                    'Adaptability': 82,
+                    'Results': 92
+                }
+            },
+            {
+                label: 'Employee B',
+                values: { 
+                    'Technical Skills': 80, 
+                    'Communication': 95, 
+                    'Leadership': 90, 
+                    'Problem Solving': 85,
+                    'Teamwork': 95,
+                    'Innovation': 88,
+                    'Adaptability': 90,
+                    'Results': 85
+                }
             }
         ];
 
@@ -675,7 +915,7 @@ const data = [
                                     checked={config.showValues}
                                     onChange={(e) => updateConfig('showValues', e.target.checked)}
                                 />
-                                Show Values
+                                Show Values on Hover
                             </label>
                         </div>
                         <div className="control-group">
@@ -797,7 +1037,7 @@ const data = [
                                     checked={config.showValues}
                                     onChange={(e) => updateConfig('showValues', e.target.checked)}
                                 />
-                                Show Values
+                                Show Values on Hover
                             </label>
                         </div>
                         <div className="control-group">
@@ -908,7 +1148,7 @@ const data = [
                                     checked={config.showValues}
                                     onChange={(e) => updateConfig('showValues', e.target.checked)}
                                 />
-                                Show Values
+                                Show Values on Hover
                             </label>
                         </div>
                         <div className="control-group">
@@ -933,6 +1173,7 @@ const data = [
                 height: 400,
                 showGrid: true,
                 showLabels: true,
+                showValues: true,
                 showLegend: true,
                 legendTitle: 'Servers'
             });
@@ -952,6 +1193,7 @@ const data = [
                             theme={config.theme}
                             showGrid={config.showGrid}
                             showLabels={config.showLabels}
+                            showValues={config.showValues}
                             showLegend={config.showLegend}
                             legendTitle={config.legendTitle}
                         />
@@ -1026,6 +1268,198 @@ const data = [
                             <label className="checkbox-label">
                                 <input 
                                     type="checkbox" 
+                                    checked={config.showValues}
+                                    onChange={(e) => updateConfig('showValues', e.target.checked)}
+                                />
+                                Show Values on Hover
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showLegend}
+                                    onChange={(e) => updateConfig('showLegend', e.target.checked)}
+                                />
+                                Show Legend
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ThreeDimDemo = () => {
+            const [config, setConfig] = useState({
+                theme: 'light',
+                width: 400,
+                height: 400,
+                showGrid: true,
+                showLabels: true,
+                showValues: true,
+                showLegend: true,
+                legendTitle: 'Options'
+            });
+
+            const updateConfig = (key, value) => {
+                setConfig(prev => ({ ...prev, [key]: value }));
+            };
+
+            return (
+                <div>
+                    <div className="chart-container">
+                        <R8R 
+                            data={threeDimData}
+                            chart={threeDimChart}
+                            width={config.width}
+                            height={config.height}
+                            theme={config.theme}
+                            colors={['#3b82f6', '#ef4444', '#10b981']}
+                            showGrid={config.showGrid}
+                            showLabels={config.showLabels}
+                            showValues={config.showValues}
+                            showLegend={config.showLegend}
+                            legendTitle={config.legendTitle}
+                        />
+                    </div>
+                    <div className="controls">
+                        <div className="control-group">
+                            <label>Theme:</label>
+                            <select 
+                                value={config.theme} 
+                                onChange={(e) => updateConfig('theme', e.target.value)}
+                            >
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div className="control-group">
+                            <label>Legend Title:</label>
+                            <input 
+                                type="text" 
+                                value={config.legendTitle}
+                                onChange={(e) => updateConfig('legendTitle', e.target.value)}
+                                placeholder="Leave empty to hide title"
+                            />
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showValues}
+                                    onChange={(e) => updateConfig('showValues', e.target.checked)}
+                                />
+                                Show Values on Hover
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showLegend}
+                                    onChange={(e) => updateConfig('showLegend', e.target.checked)}
+                                />
+                                Show Legend
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const EightDimDemo = () => {
+            const [config, setConfig] = useState({
+                theme: 'light',
+                width: 500,
+                height: 500,
+                showGrid: true,
+                showLabels: true,
+                showValues: true,
+                showLegend: true,
+                legendTitle: 'Performance Review'
+            });
+
+            const updateConfig = (key, value) => {
+                setConfig(prev => ({ ...prev, [key]: value }));
+            };
+
+            return (
+                <div>
+                    <div className="chart-container">
+                        <R8R 
+                            data={eightDimData}
+                            chart={eightDimChart}
+                            width={config.width}
+                            height={config.height}
+                            theme={config.theme}
+                            colors={['#8b5cf6', '#f59e0b']}
+                            showGrid={config.showGrid}
+                            showLabels={config.showLabels}
+                            showValues={config.showValues}
+                            showLegend={config.showLegend}
+                            legendTitle={config.legendTitle}
+                        />
+                    </div>
+                    <div className="controls">
+                        <div className="control-group">
+                            <label>Theme:</label>
+                            <select 
+                                value={config.theme} 
+                                onChange={(e) => updateConfig('theme', e.target.value)}
+                            >
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div className="control-group">
+                            <label>Width:</label>
+                            <div className="number-input">
+                                <input 
+                                    type="number" 
+                                    min="400" 
+                                    max="800" 
+                                    value={config.width}
+                                    onChange={(e) => updateConfig('width', parseInt(e.target.value) || 500)}
+                                />
+                                <span>px</span>
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Height:</label>
+                            <div className="number-input">
+                                <input 
+                                    type="number" 
+                                    min="400" 
+                                    max="800" 
+                                    value={config.height}
+                                    onChange={(e) => updateConfig('height', parseInt(e.target.value) || 500)}
+                                />
+                                <span>px</span>
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Legend Title:</label>
+                            <input 
+                                type="text" 
+                                value={config.legendTitle}
+                                onChange={(e) => updateConfig('legendTitle', e.target.value)}
+                                placeholder="Leave empty to hide title"
+                            />
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showValues}
+                                    onChange={(e) => updateConfig('showValues', e.target.checked)}
+                                />
+                                Show Values on Hover
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
                                     checked={config.showLegend}
                                     onChange={(e) => updateConfig('showLegend', e.target.checked)}
                                 />
@@ -1042,6 +1476,8 @@ const data = [
         ReactDOM.render(<ComparisonDemo />, document.getElementById('comparison-chart'));
         ReactDOM.render(<DarkDemo />, document.getElementById('dark-chart'));
         ReactDOM.render(<PerformanceDemo />, document.getElementById('performance-chart'));
+        ReactDOM.render(<ThreeDimDemo />, document.getElementById('three-dim-chart'));
+        ReactDOM.render(<EightDimDemo />, document.getElementById('eight-dim-chart'));
     </script>
 </body>
 </html> 

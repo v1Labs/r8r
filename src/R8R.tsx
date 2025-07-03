@@ -6,29 +6,45 @@ export interface DataPoint {
   maxValue?: number;
 }
 
+export interface Dataset {
+  label: string;
+  values: Record<string, number>;
+  color?: string;
+}
+
 export interface R8RProps {
-  /** Primary dataset to display */
-  primaryData: DataPoint[];
-  /** Secondary dataset for comparison (optional) */
-  secondaryData?: DataPoint[];
+  /** Array of datasets to display */
+  data: Dataset[];
+  /** Chart structure defining the axes */
+  chart: DataPoint[];
   /** Width of the chart in pixels */
   width?: number;
   /** Height of the chart in pixels */
   height?: number;
-  /** Primary data color (hex or CSS color) */
-  primaryColor?: string;
-  /** Secondary data color (hex or CSS color) */
-  secondaryColor?: string;
+  /** Theme preset ('light' | 'dark') */
+  theme?: 'light' | 'dark';
   /** Background color of the chart */
   backgroundColor?: string;
   /** Grid line color */
   gridColor?: string;
+  /** Text color for labels and legend */
+  textColor?: string;
+  /** Legend background color */
+  legendBackgroundColor?: string;
+  /** Legend border color */
+  legendBorderColor?: string;
+  /** Array of colors for datasets (will be used if dataset doesn't specify a color) */
+  colors?: string[];
   /** Whether to show grid lines */
   showGrid?: boolean;
   /** Whether to show axis labels */
   showLabels?: boolean;
   /** Whether to show data point values */
   showValues?: boolean;
+  /** Whether to show legend */
+  showLegend?: boolean;
+  /** Title for the legend (empty string hides the title) */
+  legendTitle?: string;
   /** Animation duration in milliseconds */
   animationDuration?: number;
   /** Custom CSS class name */
@@ -37,74 +53,142 @@ export interface R8RProps {
   style?: React.CSSProperties;
 }
 
+// Predefined themes
+const themes: Record<string, {
+  backgroundColor: string;
+  gridColor: string;
+  textColor: string;
+  legendBackgroundColor: string;
+  legendBorderColor: string;
+}> = {
+  light: {
+    backgroundColor: '#ffffff',
+    gridColor: '#e5e7eb',
+    textColor: '#374151',
+    legendBackgroundColor: '#f9fafb',
+    legendBorderColor: '#e5e7eb',
+  },
+  dark: {
+    backgroundColor: '#1f2937',
+    gridColor: '#374151',
+    textColor: '#f9fafb',
+    legendBackgroundColor: '#111827',
+    legendBorderColor: '#374151',
+  },
+};
+
+// Default colors for datasets
+const defaultColors = [
+  '#3b82f6', // blue
+  '#ef4444', // red
+  '#10b981', // green
+  '#f59e0b', // amber
+  '#8b5cf6', // purple
+  '#06b6d4', // cyan
+  '#84cc16', // lime
+  '#f97316', // orange
+  '#ec4899', // pink
+  '#6b7280', // gray
+];
+
 const R8R: React.FC<R8RProps> = ({
-  primaryData,
-  secondaryData = [],
+  data,
+  chart,
   width = 400,
   height = 400,
-  primaryColor = '#3b82f6',
-  secondaryColor = '#ef4444',
-  backgroundColor = '#ffffff',
-  gridColor = '#e5e7eb',
+  theme = 'light',
+  backgroundColor,
+  gridColor,
+  textColor,
+  legendBackgroundColor,
+  legendBorderColor,
+  colors = defaultColors,
   showGrid = true,
   showLabels = true,
   showValues = false,
+  showLegend = true,
+  legendTitle = '',
   animationDuration = 1000,
   className = '',
   style = {},
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [visibleDatasets, setVisibleDatasets] = useState<Set<number>>(new Set(data.map((_, index) => index)));
+
+  // Merge theme with custom overrides
+  const currentTheme = useMemo(() => {
+    const baseTheme = themes[theme];
+    return {
+      backgroundColor: backgroundColor || baseTheme.backgroundColor,
+      gridColor: gridColor || baseTheme.gridColor,
+      textColor: textColor || baseTheme.textColor,
+      legendBackgroundColor: legendBackgroundColor || baseTheme.legendBackgroundColor,
+      legendBorderColor: legendBorderColor || baseTheme.legendBorderColor,
+    };
+  }, [theme, backgroundColor, gridColor, textColor, legendBackgroundColor, legendBorderColor]);
 
   // Validate data
   useEffect(() => {
-    if (!primaryData || primaryData.length === 0) {
-      console.warn('R8R: primaryData is required and must not be empty');
+    if (!data || data.length === 0) {
+      console.warn('R8R: data is required and must not be empty');
     }
-    if (primaryData.length > 10) {
+    if (!chart || chart.length === 0) {
+      console.warn('R8R: chart is required and must not be empty');
+    }
+    if (chart.length > 10) {
       console.warn('R8R: Maximum 10 dimensions supported');
     }
-  }, [primaryData]);
+  }, [data, chart]);
 
   // Calculate chart dimensions and positioning
   const chartConfig = useMemo(() => {
-    const centerX = width / 2;
+    const legendWidth = showLegend ? 120 : 0;
+    const chartWidth = width - legendWidth;
+    const centerX = chartWidth / 2;
     const centerY = height / 2;
     const radius = Math.min(centerX, centerY) * 0.7;
-    const maxValue = Math.max(
-      ...primaryData.map(d => d.maxValue || 100),
-      ...secondaryData.map(d => d.maxValue || 100)
-    );
+    const maxValue = Math.max(...chart.map(d => d.maxValue || 100));
 
     return {
       centerX,
       centerY,
       radius,
       maxValue,
+      legendWidth,
+      chartWidth,
     };
-  }, [width, height, primaryData, secondaryData]);
+  }, [width, height, chart, showLegend]);
 
-  // Calculate polygon points
-  const calculatePoints = (data: DataPoint[], color: string) => {
+  // Calculate polygon points for a dataset
+  const calculatePoints = (dataset: Dataset, color: string) => {
     const { centerX, centerY, radius, maxValue } = chartConfig;
-    const angleStep = (2 * Math.PI) / data.length;
+    const angleStep = (2 * Math.PI) / chart.length;
 
-    return data.map((point, index) => {
+    return chart.map((point, index) => {
       const angle = index * angleStep - Math.PI / 2; // Start from top
-      const normalizedValue = point.value / (point.maxValue || maxValue);
+      const value = dataset.values[point.label] || 0;
+      const normalizedValue = value / (point.maxValue || maxValue);
       const pointRadius = radius * normalizedValue;
       
       return {
         x: centerX + pointRadius * Math.cos(angle),
         y: centerY + pointRadius * Math.sin(angle),
         label: point.label,
-        value: point.value,
+        value,
         maxValue: point.maxValue || maxValue,
       };
     });
   };
 
-  const primaryPoints = useMemo(() => calculatePoints(primaryData, primaryColor), [primaryData, primaryColor, chartConfig]);
-  const secondaryPoints = useMemo(() => calculatePoints(secondaryData, secondaryColor), [secondaryData, secondaryColor, chartConfig]);
+  // Generate all dataset points
+  const allDatasetPoints = useMemo(() => {
+    return data.map((dataset, index) => ({
+      dataset,
+      points: calculatePoints(dataset, dataset.color || colors[index % colors.length]),
+      color: dataset.color || colors[index % colors.length],
+      index,
+    }));
+  }, [data, chart, colors, chartConfig]);
 
   // Generate grid circles
   const gridCircles = useMemo(() => {
@@ -130,9 +214,9 @@ const R8R: React.FC<R8RProps> = ({
   const axisLines = useMemo(() => {
     const { centerX, centerY, radius } = chartConfig;
     const lines = [];
-    const angleStep = (2 * Math.PI) / primaryData.length;
+    const angleStep = (2 * Math.PI) / chart.length;
     
-    for (let i = 0; i < primaryData.length; i++) {
+    for (let i = 0; i < chart.length; i++) {
       const angle = i * angleStep - Math.PI / 2;
       const endX = centerX + radius * Math.cos(angle);
       const endY = centerY + radius * Math.sin(angle);
@@ -142,13 +226,13 @@ const R8R: React.FC<R8RProps> = ({
         y1: centerY,
         x2: endX,
         y2: endY,
-        label: primaryData[i].label,
+        label: chart[i].label,
         angle,
       });
     }
     
     return lines;
-  }, [primaryData, chartConfig]);
+  }, [chart, chartConfig]);
 
   // Create polygon path
   const createPolygonPath = (points: Array<{ x: number; y: number }>) => {
@@ -156,12 +240,23 @@ const R8R: React.FC<R8RProps> = ({
     return `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')} Z`;
   };
 
+  // Toggle dataset visibility
+  const toggleDataset = (index: number) => {
+    const newVisible = new Set(visibleDatasets);
+    if (newVisible.has(index)) {
+      newVisible.delete(index);
+    } else {
+      newVisible.add(index);
+    }
+    setVisibleDatasets(newVisible);
+  };
+
   // Animation effect
   useEffect(() => {
     setIsAnimating(true);
     const timer = setTimeout(() => setIsAnimating(false), animationDuration);
     return () => clearTimeout(timer);
-  }, [primaryData, secondaryData, animationDuration]);
+  }, [data, chart, animationDuration]);
 
   return (
     <div
@@ -169,14 +264,74 @@ const R8R: React.FC<R8RProps> = ({
       style={{
         width,
         height,
-        backgroundColor,
+        backgroundColor: currentTheme.backgroundColor,
         borderRadius: '8px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        display: 'flex',
+        transition: `all ${animationDuration}ms ease-in-out`,
+        opacity: isAnimating ? 0.8 : 1,
         ...style,
       }}
     >
+      {/* Legend */}
+      {showLegend && (
+        <div
+          style={{
+            width: chartConfig.legendWidth,
+            padding: '16px',
+            borderRight: `1px solid ${currentTheme.legendBorderColor}`,
+            backgroundColor: currentTheme.legendBackgroundColor,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
+          <h3 style={{ 
+            margin: '0 0 12px 0', 
+            fontSize: '14px', 
+            fontWeight: '600',
+            color: currentTheme.textColor 
+          }}>
+            {legendTitle}
+          </h3>
+          {allDatasetPoints.map(({ dataset, color, index }) => {
+            const isVisible = visibleDatasets.has(index);
+            return (
+              <div
+                key={index}
+                onClick={() => toggleDataset(index)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  color: currentTheme.textColor,
+                  opacity: isVisible ? 1 : 0.4,
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  backgroundColor: isVisible ? `${color}20` : 'transparent',
+                  border: `1px solid ${isVisible ? color : 'transparent'}`,
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{
+                  width: '12px',
+                  height: '12px',
+                  backgroundColor: color,
+                  borderRadius: '2px',
+                  opacity: isVisible ? 1 : 0.5
+                }} />
+                {dataset.label}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Chart */}
       <svg
-        width={width}
+        width={chartConfig.chartWidth}
         height={height}
         style={{
           display: 'block',
@@ -192,7 +347,7 @@ const R8R: React.FC<R8RProps> = ({
             cy={circle.cy}
             r={circle.r}
             fill="none"
-            stroke={gridColor}
+            stroke={currentTheme.gridColor}
             strokeWidth="1"
             opacity="0.3"
           />
@@ -206,7 +361,7 @@ const R8R: React.FC<R8RProps> = ({
               y1={line.y1}
               x2={line.x2}
               y2={line.y2}
-              stroke={gridColor}
+              stroke={currentTheme.gridColor}
               strokeWidth="1"
               opacity="0.5"
             />
@@ -217,7 +372,7 @@ const R8R: React.FC<R8RProps> = ({
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize="12"
-                fill="#6b7280"
+                fill={currentTheme.textColor}
                 fontWeight="500"
               >
                 {line.label}
@@ -226,80 +381,49 @@ const R8R: React.FC<R8RProps> = ({
           </g>
         ))}
 
-        {/* Secondary data polygon */}
-        {secondaryData.length > 0 && (
-          <path
-            d={createPolygonPath(secondaryPoints)}
-            fill={secondaryColor}
-            fillOpacity="0.2"
-            stroke={secondaryColor}
-            strokeWidth="2"
-            strokeOpacity="0.8"
-          />
-        )}
-
-        {/* Primary data polygon */}
-        <path
-          d={createPolygonPath(primaryPoints)}
-          fill={primaryColor}
-          fillOpacity="0.2"
-          stroke={primaryColor}
-          strokeWidth="3"
-          strokeOpacity="0.9"
-        />
-
-        {/* Data points */}
-        {primaryPoints.map((point, index) => (
-          <g key={`point-${index}`}>
-            <circle
-              cx={point.x}
-              cy={point.y}
-              r="4"
-              fill={primaryColor}
-              stroke="white"
-              strokeWidth="2"
-            />
-            {showValues && (
-              <text
-                x={point.x}
-                y={point.y - 15}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="10"
-                fill="#374151"
-                fontWeight="600"
-              >
-                {point.value}
-              </text>
-            )}
-          </g>
-        ))}
-
-        {secondaryData.length > 0 && secondaryPoints.map((point, index) => (
-          <g key={`secondary-point-${index}`}>
-            <circle
-              cx={point.x}
-              cy={point.y}
-              r="3"
-              fill={secondaryColor}
-              stroke="white"
-              strokeWidth="1.5"
-            />
-            {showValues && (
-              <text
-                x={point.x}
-                y={point.y + 15}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="10"
-                fill="#374151"
-                fontWeight="600"
-              >
-                {point.value}
-              </text>
-            )}
-          </g>
-        ))}
+        {/* Dataset polygons */}
+        {allDatasetPoints.map(({ dataset, points, color, index }) => {
+          if (!visibleDatasets.has(index)) return null;
+          
+          return (
+            <g key={`dataset-${index}`}>
+              <path
+                d={createPolygonPath(points)}
+                fill={color}
+                fillOpacity="0.2"
+                stroke={color}
+                strokeWidth="2"
+                strokeOpacity="0.8"
+              />
+              {/* Data points */}
+              {points.map((point, pointIndex) => (
+                <g key={`point-${index}-${pointIndex}`}>
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r="4"
+                    fill={color}
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                  {showValues && (
+                    <text
+                      x={point.x}
+                      y={point.y - 15}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize="10"
+                      fill={currentTheme.textColor}
+                      fontWeight="600"
+                    >
+                      {point.value}
+                    </text>
+                  )}
+                </g>
+              ))}
+            </g>
+          );
+        })}
       </svg>
     </div>
   );

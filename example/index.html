@@ -61,12 +61,78 @@
             overflow-x: auto;
             margin-top: 15px;
         }
+        .controls {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .control-group {
+            margin-bottom: 12px;
+        }
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .control-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+        .control-group input[type="number"] {
+            width: 80px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #374151;
+        }
+        .color-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .color-input input[type="color"] {
+            width: 40px;
+            height: 30px;
+            padding: 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .color-input input[type="text"] {
+            flex: 1;
+        }
+        .number-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .number-input input {
+            width: 80px;
+        }
+        .number-input span {
+            font-size: 12px;
+            color: #6b7280;
+            min-width: 30px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>R8R - React Radar Chart</h1>
+            <h1>R8R - React Radar Chart Demo</h1>
             <p>A modern, zero-dependency radar chart for visual comparisons</p>
         </div>
 
@@ -76,57 +142,88 @@
                 <p>Simple single dataset visualization</p>
                 <div class="chart-container" id="basic-chart"></div>
                 <div class="code">
-const data = [
-  { label: 'Speed', value: 85 },
-  { label: 'Reliability', value: 92 },
-  { label: 'Comfort', value: 78 },
-  { label: 'Safety', value: 95 },
-  { label: 'Efficiency', value: 88 }
+const chart = [
+  { label: 'Speed', value: 0, maxValue: 100 },
+  { label: 'Reliability', value: 0, maxValue: 100 },
+  { label: 'Comfort', value: 0, maxValue: 100 },
+  { label: 'Safety', value: 0, maxValue: 100 },
+  { label: 'Efficiency', value: 0, maxValue: 100 }
 ];
 
-&lt;R8R primaryData={data} /&gt;
+const data = [
+  {
+    label: 'Car Performance',
+    values: {
+      'Speed': 85,
+      'Reliability': 92,
+      'Comfort': 78,
+      'Safety': 95,
+      'Efficiency': 88
+    }
+  }
+];
+
+&lt;R8R data={data} chart={chart} /&gt;
                 </div>
             </div>
 
             <div class="example">
-                <h3>Dual Dataset Comparison</h3>
-                <p>Compare two datasets side by side</p>
+                <h3>Multiple Dataset Comparison</h3>
+                <p>Compare multiple datasets with interactive legend</p>
                 <div class="chart-container" id="comparison-chart"></div>
                 <div class="code">
-const current = [
-  { label: 'Design', value: 75 },
-  { label: 'Development', value: 85 },
-  { label: 'Testing', value: 90 },
-  { label: 'Documentation', value: 60 },
-  { label: 'Deployment', value: 80 }
+const chart = [
+  { label: 'Design', value: 0, maxValue: 100 },
+  { label: 'Development', value: 0, maxValue: 100 },
+  { label: 'Testing', value: 0, maxValue: 100 },
+  { label: 'Documentation', value: 0, maxValue: 100 },
+  { label: 'Deployment', value: 0, maxValue: 100 }
 ];
 
-const target = [
-  { label: 'Design', value: 90 },
-  { label: 'Development', value: 95 },
-  { label: 'Testing', value: 95 },
-  { label: 'Documentation', value: 85 },
-  { label: 'Deployment', value: 90 }
+const data = [
+  {
+    label: 'Current',
+    values: {
+      'Design': 75,
+      'Development': 85,
+      'Testing': 90,
+      'Documentation': 60,
+      'Deployment': 80
+    }
+  },
+  {
+    label: 'Target',
+    values: {
+      'Design': 90,
+      'Development': 95,
+      'Testing': 95,
+      'Documentation': 85,
+      'Deployment': 90
+    }
+  }
 ];
 
 &lt;R8R 
-  primaryData={current}
-  secondaryData={target}
+  data={data}
+  chart={chart}
+  colors={['#3b82f6', '#ef4444']}
   showValues={true}
+  showLegend={true}
 /&gt;
                 </div>
             </div>
 
             <div class="example">
-                <h3>Custom Styling</h3>
-                <p>Customized colors and appearance</p>
-                <div class="chart-container" id="custom-chart"></div>
+                <h3>Dark Theme</h3>
+                <p>Customized dark theme with custom colors</p>
+                <div class="chart-container" id="dark-chart"></div>
                 <div class="code">
 &lt;R8R 
-  primaryData={data}
-  primaryColor="#10b981"
-  backgroundColor="#f8fafc"
-  gridColor="#cbd5e1"
+  data={data}
+  chart={chart}
+  theme="dark"
+  colors={['#10b981', '#f59e0b']}
+  backgroundColor="#222"
   showValues={true}
   animationDuration={1500}
 /&gt;
@@ -135,22 +232,39 @@ const target = [
 
             <div class="example">
                 <h3>Performance Metrics</h3>
-                <p>System performance visualization</p>
+                <p>System performance visualization with multiple components</p>
                 <div class="chart-container" id="performance-chart"></div>
                 <div class="code">
-const performance = [
-  { label: 'CPU', value: 85 },
-  { label: 'Memory', value: 92 },
-  { label: 'Storage', value: 78 },
-  { label: 'Network', value: 95 },
-  { label: 'Graphics', value: 88 }
+const chart = [
+  { label: 'CPU', value: 0, maxValue: 100 },
+  { label: 'Memory', value: 0, maxValue: 100 },
+  { label: 'Storage', value: 0, maxValue: 100 },
+  { label: 'Network', value: 0, maxValue: 100 },
+  { label: 'Graphics', value: 0, maxValue: 100 }
+];
+
+const data = [
+  {
+    label: 'Server A',
+    values: { 'CPU': 85, 'Memory': 92, 'Storage': 78, 'Network': 95, 'Graphics': 88 }
+  },
+  {
+    label: 'Server B',
+    values: { 'CPU': 75, 'Memory': 85, 'Storage': 90, 'Network': 80, 'Graphics': 95 }
+  },
+  {
+    label: 'Server C',
+    values: { 'CPU': 95, 'Memory': 70, 'Storage': 85, 'Network': 88, 'Graphics': 75 }
+  }
 ];
 
 &lt;R8R 
-  primaryData={performance}
-  primaryColor="#8b5cf6"
+  data={data}
+  chart={chart}
+  colors={['#8b5cf6', '#06b6d4', '#84cc16']}
   showGrid={true}
   showLabels={true}
+  showLegend={true}
 /&gt;
                 </div>
             </div>
@@ -170,45 +284,166 @@ const performance = [
         const { useState, useEffect, useMemo } = React;
         
         // Mock R8R component for demo
-        const R8R = ({ primaryData, secondaryData = [], width = 400, height = 400, 
-                      primaryColor = '#3b82f6', secondaryColor = '#ef4444',
-                      backgroundColor = '#ffffff', showValues = false }) => {
+        const R8R = ({ data, chart, width = 400, height = 400, 
+                      theme = 'light', backgroundColor, gridColor, textColor,
+                      legendBackgroundColor, legendBorderColor, colors = [
+                        '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+                        '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6b7280'
+                      ], showValues = false, 
+                      showLegend = true, showGrid = true, showLabels = true,
+                      legendTitle = '', animationDuration = 1000 }) => {
             
-            const centerX = width / 2;
+            const [visibleDatasets, setVisibleDatasets] = useState(new Set(data.map((_, i) => i)));
+            const [isAnimating, setIsAnimating] = useState(false);
+            
+            // Simple theme implementation
+            const themes = {
+                light: { 
+                    bg: '#ffffff', 
+                    text: '#374151', 
+                    grid: '#e5e7eb',
+                    legendBg: '#f9fafb',
+                    legendBorder: '#e5e7eb'
+                },
+                dark: { 
+                    bg: '#1f2937', 
+                    text: '#f9fafb', 
+                    grid: '#374151',
+                    legendBg: '#111827',
+                    legendBorder: '#374151'
+                }
+            };
+            const baseTheme = themes[theme];
+            const currentTheme = {
+                bg: backgroundColor || baseTheme.bg,
+                text: textColor || baseTheme.text,
+                grid: gridColor || baseTheme.grid,
+                legendBg: legendBackgroundColor || baseTheme.legendBg,
+                legendBorder: legendBorderColor || baseTheme.legendBorder
+            };
+            
+            const legendWidth = showLegend ? 120 : 0;
+            const chartWidth = width - legendWidth;
+            const centerX = chartWidth / 2;
             const centerY = height / 2;
             const radius = Math.min(centerX, centerY) * 0.6;
             
-            const createPolygon = (data, color) => {
-                if (!data || data.length === 0) return '';
-                const angleStep = (2 * Math.PI) / data.length;
-                const points = data.map((point, index) => {
+            const createPolygon = (dataset, color) => {
+                if (!chart || chart.length === 0) return '';
+                const angleStep = (2 * Math.PI) / chart.length;
+                const points = chart.map((point, index) => {
                     const angle = index * angleStep - Math.PI / 2;
-                    const pointRadius = radius * (point.value / 100);
+                    const value = dataset.values[point.label] || 0;
+                    const pointRadius = radius * (value / (point.maxValue || 100));
                     return `${centerX + pointRadius * Math.cos(angle)},${centerY + pointRadius * Math.sin(angle)}`;
                 });
                 return points.join(' ');
             };
             
+            const toggleDataset = (index) => {
+                const newVisible = new Set(visibleDatasets);
+                if (newVisible.has(index)) {
+                    newVisible.delete(index);
+                } else {
+                    newVisible.add(index);
+                }
+                setVisibleDatasets(newVisible);
+            };
+            
+            // Animation effect
+            useEffect(() => {
+                setIsAnimating(true);
+                const timer = setTimeout(() => setIsAnimating(false), animationDuration);
+                return () => clearTimeout(timer);
+            }, [data, chart, animationDuration]);
+            
             return (
-                <div style={{ width, height, backgroundColor, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-                    <svg width={width} height={height}>
+                <div style={{ 
+                    width, 
+                    height, 
+                    backgroundColor: currentTheme.bg, 
+                    borderRadius: '8px', 
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    display: 'flex',
+                    transition: `all ${animationDuration}ms ease-in-out`,
+                    opacity: isAnimating ? 0.8 : 1
+                }}>
+                    {/* Legend */}
+                    {showLegend && (
+                        <div style={{
+                            width: legendWidth,
+                            padding: '16px',
+                            borderRight: `1px solid ${currentTheme.legendBorder}`,
+                            backgroundColor: currentTheme.legendBg,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                        }}>
+                            {legendTitle && (
+                                <h3 style={{ 
+                                    margin: '0 0 12px 0', 
+                                    fontSize: '14px', 
+                                    fontWeight: '600',
+                                    color: currentTheme.text 
+                                }}>
+                                    {legendTitle}
+                                </h3>
+                            )}
+                            {data.map((dataset, index) => {
+                                const isVisible = visibleDatasets.has(index);
+                                const color = dataset.color || colors[index % colors.length];
+                                return (
+                                    <div
+                                        key={index}
+                                        onClick={() => toggleDataset(index)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                            color: currentTheme.text,
+                                            opacity: isVisible ? 1 : 0.4,
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            backgroundColor: isVisible ? `${color}20` : 'transparent',
+                                            border: `1px solid ${isVisible ? color : 'transparent'}`,
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '12px',
+                                            height: '12px',
+                                            backgroundColor: color,
+                                            borderRadius: '2px',
+                                            opacity: isVisible ? 1 : 0.5
+                                        }} />
+                                        {dataset.label}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                    
+                    {/* Chart */}
+                    <svg width={chartWidth} height={height}>
                         {/* Grid circles */}
-                        {[1, 2, 3, 4, 5].map(i => (
+                        {showGrid && [1, 2, 3, 4, 5].map(i => (
                             <circle
                                 key={i}
                                 cx={centerX}
                                 cy={centerY}
                                 r={(radius * i) / 5}
                                 fill="none"
-                                stroke="#e5e7eb"
+                                stroke={currentTheme.grid}
                                 strokeWidth="1"
                                 opacity="0.3"
                             />
                         ))}
                         
                         {/* Axis lines */}
-                        {primaryData.map((point, index) => {
-                            const angle = (index * 2 * Math.PI) / primaryData.length - Math.PI / 2;
+                        {chart.map((point, index) => {
+                            const angle = (index * 2 * Math.PI) / chart.length - Math.PI / 2;
                             const endX = centerX + radius * Math.cos(angle);
                             const endY = centerY + radius * Math.sin(angle);
                             return (
@@ -218,114 +453,595 @@ const performance = [
                                         y1={centerY}
                                         x2={endX}
                                         y2={endY}
-                                        stroke="#e5e7eb"
+                                        stroke={currentTheme.grid}
                                         strokeWidth="1"
                                         opacity="0.5"
                                     />
-                                    <text
-                                        x={endX + Math.cos(angle) * 20}
-                                        y={endY + Math.sin(angle) * 20}
-                                        textAnchor="middle"
-                                        dominantBaseline="middle"
-                                        fontSize="12"
-                                        fill="#6b7280"
-                                    >
-                                        {point.label}
-                                    </text>
+                                    {showLabels && (
+                                        <text
+                                            x={endX + Math.cos(angle) * 20}
+                                            y={endY + Math.sin(angle) * 20}
+                                            textAnchor="middle"
+                                            dominantBaseline="middle"
+                                            fontSize="12"
+                                            fill={currentTheme.text}
+                                        >
+                                            {point.label}
+                                        </text>
+                                    )}
                                 </g>
                             );
                         })}
                         
-                        {/* Secondary data */}
-                        {secondaryData.length > 0 && (
-                            <polygon
-                                points={createPolygon(secondaryData, secondaryColor)}
-                                fill={secondaryColor}
-                                fillOpacity="0.2"
-                                stroke={secondaryColor}
-                                strokeWidth="2"
-                            />
-                        )}
-                        
-                        {/* Primary data */}
-                        <polygon
-                            points={createPolygon(primaryData, primaryColor)}
-                            fill={primaryColor}
-                            fillOpacity="0.2"
-                            stroke={primaryColor}
-                            strokeWidth="3"
-                        />
+                        {/* Dataset polygons */}
+                        {data.map((dataset, index) => {
+                            if (!visibleDatasets.has(index)) return null;
+                            const color = dataset.color || colors[index % colors.length];
+                            return (
+                                <polygon
+                                    key={index}
+                                    points={createPolygon(dataset, color)}
+                                    fill={color}
+                                    fillOpacity="0.2"
+                                    stroke={color}
+                                    strokeWidth="2"
+                                />
+                            );
+                        })}
                     </svg>
                 </div>
             );
         };
 
         // Demo data
+        const basicChart = [
+            { label: 'Speed', value: 0, maxValue: 100 },
+            { label: 'Reliability', value: 0, maxValue: 100 },
+            { label: 'Comfort', value: 0, maxValue: 100 },
+            { label: 'Safety', value: 0, maxValue: 100 },
+            { label: 'Efficiency', value: 0, maxValue: 100 }
+        ];
+
         const basicData = [
-            { label: 'Speed', value: 85 },
-            { label: 'Reliability', value: 92 },
-            { label: 'Comfort', value: 78 },
-            { label: 'Safety', value: 95 },
-            { label: 'Efficiency', value: 88 }
+            {
+                label: 'Car Performance',
+                values: {
+                    'Speed': 85,
+                    'Reliability': 92,
+                    'Comfort': 78,
+                    'Safety': 95,
+                    'Efficiency': 88
+                }
+            }
         ];
 
-        const currentData = [
-            { label: 'Design', value: 75 },
-            { label: 'Development', value: 85 },
-            { label: 'Testing', value: 90 },
-            { label: 'Documentation', value: 60 },
-            { label: 'Deployment', value: 80 }
+        const comparisonChart = [
+            { label: 'Design', value: 0, maxValue: 100 },
+            { label: 'Development', value: 0, maxValue: 100 },
+            { label: 'Testing', value: 0, maxValue: 100 },
+            { label: 'Documentation', value: 0, maxValue: 100 },
+            { label: 'Deployment', value: 0, maxValue: 100 }
         ];
 
-        const targetData = [
-            { label: 'Design', value: 90 },
-            { label: 'Development', value: 95 },
-            { label: 'Testing', value: 95 },
-            { label: 'Documentation', value: 85 },
-            { label: 'Deployment', value: 90 }
+        const comparisonData = [
+            {
+                label: 'Current',
+                values: {
+                    'Design': 75,
+                    'Development': 85,
+                    'Testing': 90,
+                    'Documentation': 60,
+                    'Deployment': 80
+                }
+            },
+            {
+                label: 'Target',
+                values: {
+                    'Design': 90,
+                    'Development': 95,
+                    'Testing': 95,
+                    'Documentation': 85,
+                    'Deployment': 90
+                }
+            }
+        ];
+
+        const performanceChart = [
+            { label: 'CPU', value: 0, maxValue: 100 },
+            { label: 'Memory', value: 0, maxValue: 100 },
+            { label: 'Storage', value: 0, maxValue: 100 },
+            { label: 'Network', value: 0, maxValue: 100 },
+            { label: 'Graphics', value: 0, maxValue: 100 }
         ];
 
         const performanceData = [
-            { label: 'CPU', value: 85 },
-            { label: 'Memory', value: 92 },
-            { label: 'Storage', value: 78 },
-            { label: 'Network', value: 95 },
-            { label: 'Graphics', value: 88 }
+            {
+                label: 'Server A',
+                values: { 'CPU': 85, 'Memory': 92, 'Storage': 78, 'Network': 95, 'Graphics': 88 }
+            },
+            {
+                label: 'Server B',
+                values: { 'CPU': 75, 'Memory': 85, 'Storage': 90, 'Network': 80, 'Graphics': 95 }
+            },
+            {
+                label: 'Server C',
+                values: { 'CPU': 95, 'Memory': 70, 'Storage': 85, 'Network': 88, 'Graphics': 75 }
+            }
         ];
 
+        // Interactive demo components
+        const BasicDemo = () => {
+            const [config, setConfig] = useState({
+                theme: 'light',
+                width: 400,
+                height: 400,
+                showGrid: true,
+                showLabels: true,
+                showValues: false,
+                showLegend: true,
+                legendTitle: ''
+            });
+
+            const updateConfig = (key, value) => {
+                setConfig(prev => ({ ...prev, [key]: value }));
+            };
+
+            return (
+                <div>
+                    <div className="chart-container">
+                        <R8R 
+                            data={basicData} 
+                            chart={basicChart}
+                            width={config.width}
+                            height={config.height}
+                            theme={config.theme}
+                            showGrid={config.showGrid}
+                            showLabels={config.showLabels}
+                            showValues={config.showValues}
+                            showLegend={config.showLegend}
+                            legendTitle={config.legendTitle}
+                        />
+                    </div>
+                    <div className="controls">
+                        <div className="control-group">
+                            <label>Theme:</label>
+                            <select 
+                                value={config.theme} 
+                                onChange={(e) => updateConfig('theme', e.target.value)}
+                            >
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div className="control-group">
+                            <label>Width:</label>
+                            <div className="number-input">
+                                <input 
+                                    type="number" 
+                                    min="300" 
+                                    max="600" 
+                                    value={config.width}
+                                    onChange={(e) => updateConfig('width', parseInt(e.target.value) || 400)}
+                                />
+                                <span>px</span>
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Height:</label>
+                            <div className="number-input">
+                                <input 
+                                    type="number" 
+                                    min="300" 
+                                    max="600" 
+                                    value={config.height}
+                                    onChange={(e) => updateConfig('height', parseInt(e.target.value) || 400)}
+                                />
+                                <span>px</span>
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Legend Title:</label>
+                            <input 
+                                type="text" 
+                                value={config.legendTitle}
+                                onChange={(e) => updateConfig('legendTitle', e.target.value)}
+                                placeholder="Leave empty to hide title"
+                            />
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showGrid}
+                                    onChange={(e) => updateConfig('showGrid', e.target.checked)}
+                                />
+                                Show Grid
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showLabels}
+                                    onChange={(e) => updateConfig('showLabels', e.target.checked)}
+                                />
+                                Show Labels
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showValues}
+                                    onChange={(e) => updateConfig('showValues', e.target.checked)}
+                                />
+                                Show Values
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showLegend}
+                                    onChange={(e) => updateConfig('showLegend', e.target.checked)}
+                                />
+                                Show Legend
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ComparisonDemo = () => {
+            const [config, setConfig] = useState({
+                theme: 'light',
+                colors: ['#3b82f6', '#ef4444'],
+                animationDuration: 1000,
+                showValues: true,
+                showLegend: true,
+                legendTitle: 'Datasets'
+            });
+
+            const updateConfig = (key, value) => {
+                setConfig(prev => ({ ...prev, [key]: value }));
+            };
+
+            const updateColor = (index, color) => {
+                const newColors = [...config.colors];
+                newColors[index] = color;
+                updateConfig('colors', newColors);
+            };
+
+            return (
+                <div>
+                    <div className="chart-container">
+                        <R8R 
+                            data={comparisonData}
+                            chart={comparisonChart}
+                            theme={config.theme}
+                            colors={config.colors}
+                            showValues={config.showValues}
+                            showLegend={config.showLegend}
+                            legendTitle={config.legendTitle}
+                            animationDuration={config.animationDuration}
+                        />
+                    </div>
+                    <div className="controls">
+                        <div className="control-group">
+                            <label>Theme:</label>
+                            <select 
+                                value={config.theme} 
+                                onChange={(e) => updateConfig('theme', e.target.value)}
+                            >
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div className="control-group">
+                            <label>Legend Title:</label>
+                            <input 
+                                type="text" 
+                                value={config.legendTitle}
+                                onChange={(e) => updateConfig('legendTitle', e.target.value)}
+                                placeholder="Leave empty to hide title"
+                            />
+                        </div>
+                        <div className="control-group">
+                            <label>Color 1:</label>
+                            <div className="color-input">
+                                <input 
+                                    type="color" 
+                                    value={config.colors[0]}
+                                    onChange={(e) => updateColor(0, e.target.value)}
+                                />
+                                <input 
+                                    type="text" 
+                                    value={config.colors[0]}
+                                    onChange={(e) => updateColor(0, e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Color 2:</label>
+                            <div className="color-input">
+                                <input 
+                                    type="color" 
+                                    value={config.colors[1]}
+                                    onChange={(e) => updateColor(1, e.target.value)}
+                                />
+                                <input 
+                                    type="text" 
+                                    value={config.colors[1]}
+                                    onChange={(e) => updateColor(1, e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Animation Duration:</label>
+                            <div className="number-input">
+                                <input 
+                                    type="number" 
+                                    min="0" 
+                                    max="2000" 
+                                    value={config.animationDuration}
+                                    onChange={(e) => updateConfig('animationDuration', parseInt(e.target.value) || 1000)}
+                                />
+                                <span>ms</span>
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showValues}
+                                    onChange={(e) => updateConfig('showValues', e.target.checked)}
+                                />
+                                Show Values
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showLegend}
+                                    onChange={(e) => updateConfig('showLegend', e.target.checked)}
+                                />
+                                Show Legend
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const DarkDemo = () => {
+            const [config, setConfig] = useState({
+                colors: ['#10b981', '#f59e0b'],
+                animationDuration: 1500,
+                showValues: true,
+                showLegend: true,
+                legendTitle: 'Performance'
+            });
+
+            const updateConfig = (key, value) => {
+                setConfig(prev => ({ ...prev, [key]: value }));
+            };
+
+            const updateColor = (index, color) => {
+                const newColors = [...config.colors];
+                newColors[index] = color;
+                updateConfig('colors', newColors);
+            };
+
+            return (
+                <div>
+                    <div className="chart-container">
+                        <R8R 
+                            data={comparisonData}
+                            chart={comparisonChart}
+                            theme="dark"
+                            colors={config.colors}
+                            showValues={config.showValues}
+                            showLegend={config.showLegend}
+                            legendTitle={config.legendTitle}
+                            animationDuration={config.animationDuration}
+                        />
+                    </div>
+                    <div className="controls">
+                        <div className="control-group">
+                            <label>Legend Title:</label>
+                            <input 
+                                type="text" 
+                                value={config.legendTitle}
+                                onChange={(e) => updateConfig('legendTitle', e.target.value)}
+                                placeholder="Leave empty to hide title"
+                            />
+                        </div>
+                        <div className="control-group">
+                            <label>Custom Color 1:</label>
+                            <div className="color-input">
+                                <input 
+                                    type="color" 
+                                    value={config.colors[0]}
+                                    onChange={(e) => updateColor(0, e.target.value)}
+                                />
+                                <input 
+                                    type="text" 
+                                    value={config.colors[0]}
+                                    onChange={(e) => updateColor(0, e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Custom Color 2:</label>
+                            <div className="color-input">
+                                <input 
+                                    type="color" 
+                                    value={config.colors[1]}
+                                    onChange={(e) => updateColor(1, e.target.value)}
+                                />
+                                <input 
+                                    type="text" 
+                                    value={config.colors[1]}
+                                    onChange={(e) => updateColor(1, e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Animation Duration:</label>
+                            <div className="number-input">
+                                <input 
+                                    type="number" 
+                                    min="0" 
+                                    max="2000" 
+                                    value={config.animationDuration}
+                                    onChange={(e) => updateConfig('animationDuration', parseInt(e.target.value) || 1500)}
+                                />
+                                <span>ms</span>
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showValues}
+                                    onChange={(e) => updateConfig('showValues', e.target.checked)}
+                                />
+                                Show Values
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showLegend}
+                                    onChange={(e) => updateConfig('showLegend', e.target.checked)}
+                                />
+                                Show Legend
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const PerformanceDemo = () => {
+            const [config, setConfig] = useState({
+                theme: 'light',
+                width: 500,
+                height: 400,
+                showGrid: true,
+                showLabels: true,
+                showLegend: true,
+                legendTitle: 'Servers'
+            });
+
+            const updateConfig = (key, value) => {
+                setConfig(prev => ({ ...prev, [key]: value }));
+            };
+
+            return (
+                <div>
+                    <div className="chart-container">
+                        <R8R 
+                            data={performanceData}
+                            chart={performanceChart}
+                            width={config.width}
+                            height={config.height}
+                            theme={config.theme}
+                            showGrid={config.showGrid}
+                            showLabels={config.showLabels}
+                            showLegend={config.showLegend}
+                            legendTitle={config.legendTitle}
+                        />
+                    </div>
+                    <div className="controls">
+                        <div className="control-group">
+                            <label>Theme:</label>
+                            <select 
+                                value={config.theme} 
+                                onChange={(e) => updateConfig('theme', e.target.value)}
+                            >
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div className="control-group">
+                            <label>Width:</label>
+                            <div className="number-input">
+                                <input 
+                                    type="number" 
+                                    min="400" 
+                                    max="800" 
+                                    value={config.width}
+                                    onChange={(e) => updateConfig('width', parseInt(e.target.value) || 500)}
+                                />
+                                <span>px</span>
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Height:</label>
+                            <div className="number-input">
+                                <input 
+                                    type="number" 
+                                    min="300" 
+                                    max="600" 
+                                    value={config.height}
+                                    onChange={(e) => updateConfig('height', parseInt(e.target.value) || 400)}
+                                />
+                                <span>px</span>
+                            </div>
+                        </div>
+                        <div className="control-group">
+                            <label>Legend Title:</label>
+                            <input 
+                                type="text" 
+                                value={config.legendTitle}
+                                onChange={(e) => updateConfig('legendTitle', e.target.value)}
+                                placeholder="Leave empty to hide title"
+                            />
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showGrid}
+                                    onChange={(e) => updateConfig('showGrid', e.target.checked)}
+                                />
+                                Show Grid
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showLabels}
+                                    onChange={(e) => updateConfig('showLabels', e.target.checked)}
+                                />
+                                Show Labels
+                            </label>
+                        </div>
+                        <div className="control-group">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={config.showLegend}
+                                    onChange={(e) => updateConfig('showLegend', e.target.checked)}
+                                />
+                                Show Legend
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // Render demos
-        ReactDOM.render(
-            <R8R primaryData={basicData} />,
-            document.getElementById('basic-chart')
-        );
-
-        ReactDOM.render(
-            <R8R 
-                primaryData={currentData}
-                secondaryData={targetData}
-                showValues={true}
-            />,
-            document.getElementById('comparison-chart')
-        );
-
-        ReactDOM.render(
-            <R8R 
-                primaryData={basicData}
-                primaryColor="#10b981"
-                backgroundColor="#f8fafc"
-                gridColor="#cbd5e1"
-                showValues={true}
-            />,
-            document.getElementById('custom-chart')
-        );
-
-        ReactDOM.render(
-            <R8R 
-                primaryData={performanceData}
-                primaryColor="#8b5cf6"
-            />,
-            document.getElementById('performance-chart')
-        );
+        ReactDOM.render(<BasicDemo />, document.getElementById('basic-chart'));
+        ReactDOM.render(<ComparisonDemo />, document.getElementById('comparison-chart'));
+        ReactDOM.render(<DarkDemo />, document.getElementById('dark-chart'));
+        ReactDOM.render(<PerformanceDemo />, document.getElementById('performance-chart'));
     </script>
 </body>
 </html> 

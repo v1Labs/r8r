@@ -2,18 +2,20 @@
 
 A modern, zero-dependency radar (spider) chart for visual comparisons in React.
 
-R8R (pronounced "radar") is an open source, minimalist component for comparing two data sets across up to 10 customizable dimensions, visualized as an intuitive radar (spider) chart. R8R helps users spot strengths, gaps, and trade-offs at a glance.
+R8R (pronounced "radar") is an open source, minimalist component for comparing multiple data sets across up to 10 customizable dimensions, visualized as an intuitive radar (spider) chart. R8R helps users spot strengths, gaps, and trade-offs at a glance.
 
 ## Features
 
 - 🎯 **Zero Dependencies** - Pure React with no external chart libraries
-- 📊 **Dual Dataset Comparison** - Compare two datasets side by side
-- 🎨 **Fully Customizable** - Colors, sizes, animations, and styling
+- 📊 **Multiple Dataset Support** - Compare unlimited datasets with automatic color cycling
+- 🎨 **Fully Customizable** - Colors, themes, sizes, animations, and styling
 - 📱 **Responsive** - Flexible width and height options
 - ⚡ **Performance Optimized** - Uses React hooks efficiently
 - 🔧 **TypeScript Ready** - Full TypeScript support with interfaces
 - 🎭 **Smooth Animations** - Configurable animation duration
-- 🏷️ **Flexible Labels** - Show/hide axis labels and data values
+- 🏷️ **Flexible Labels** - Show/hide axis labels, data values, and legend titles
+- 🌙 **Theme System** - Built-in light and dark themes with custom overrides
+- 📋 **Interactive Legend** - Toggle datasets on/off with clean visual states
 
 ## Installation
 
@@ -32,18 +34,32 @@ yarn add r8r
 ```jsx
 import R8R from 'r8r';
 
+const chart = [
+  { label: 'Speed', value: 0, maxValue: 100 },
+  { label: 'Reliability', value: 0, maxValue: 100 },
+  { label: 'Comfort', value: 0, maxValue: 100 },
+  { label: 'Safety', value: 0, maxValue: 100 },
+  { label: 'Efficiency', value: 0, maxValue: 100 },
+];
+
 const data = [
-  { label: 'Speed', value: 85 },
-  { label: 'Reliability', value: 92 },
-  { label: 'Comfort', value: 78 },
-  { label: 'Safety', value: 95 },
-  { label: 'Efficiency', value: 88 },
+  {
+    label: 'Car Performance',
+    values: {
+      'Speed': 85,
+      'Reliability': 92,
+      'Comfort': 78,
+      'Safety': 95,
+      'Efficiency': 88
+    }
+  }
 ];
 
 function App() {
   return (
     <R8R 
-      primaryData={data}
+      data={data}
+      chart={chart}
       width={400}
       height={400}
     />
@@ -57,28 +73,39 @@ function App() {
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `primaryData` | `DataPoint[]` | **Required** | Primary dataset to display |
-| `secondaryData` | `DataPoint[]` | `[]` | Secondary dataset for comparison |
+| `data` | `Dataset[]` | **Required** | Array of datasets to display |
+| `chart` | `DataPoint[]` | **Required** | Chart structure defining the axes |
 | `width` | `number` | `400` | Width of the chart in pixels |
 | `height` | `number` | `400` | Height of the chart in pixels |
-| `primaryColor` | `string` | `'#3b82f6'` | Primary data color (hex or CSS color) |
-| `secondaryColor` | `string` | `'#ef4444'` | Secondary data color (hex or CSS color) |
-| `backgroundColor` | `string` | `'#ffffff'` | Background color of the chart |
-| `gridColor` | `string` | `'#e5e7eb'` | Grid line color |
+| `theme` | `'light' \| 'dark'` | `'light'` | Theme preset |
+| `backgroundColor` | `string` | Theme default | Background color of the chart |
+| `gridColor` | `string` | Theme default | Grid line color |
+| `textColor` | `string` | Theme default | Text color for labels and legend |
+| `legendBackgroundColor` | `string` | Theme default | Legend background color |
+| `legendBorderColor` | `string` | Theme default | Legend border color |
+| `colors` | `string[]` | Default palette | Array of colors for datasets |
 | `showGrid` | `boolean` | `true` | Whether to show grid lines |
 | `showLabels` | `boolean` | `true` | Whether to show axis labels |
 | `showValues` | `boolean` | `false` | Whether to show data point values |
+| `showLegend` | `boolean` | `true` | Whether to show legend |
+| `legendTitle` | `string` | `''` | Title for the legend (empty hides title) |
 | `animationDuration` | `number` | `1000` | Animation duration in milliseconds |
 | `className` | `string` | `''` | Custom CSS class name |
 | `style` | `React.CSSProperties` | `{}` | Custom CSS styles |
 
-### DataPoint Interface
+### Interfaces
 
 ```typescript
 interface DataPoint {
   label: string;      // Axis label
-  value: number;      // Data value
+  value: number;      // Data value (used for maxValue calculation)
   maxValue?: number;  // Optional maximum value (defaults to 100)
+}
+
+interface Dataset {
+  label: string;                    // Dataset name
+  values: Record<string, number>;   // Values mapped to chart labels
+  color?: string;                   // Optional custom color for this dataset
 }
 ```
 
@@ -89,75 +116,96 @@ interface DataPoint {
 ```jsx
 import R8R from 'r8r';
 
-const performanceData = [
-  { label: 'CPU', value: 85 },
-  { label: 'Memory', value: 92 },
-  { label: 'Storage', value: 78 },
-  { label: 'Network', value: 95 },
-  { label: 'Graphics', value: 88 },
+const chart = [
+  { label: 'CPU', value: 0, maxValue: 100 },
+  { label: 'Memory', value: 0, maxValue: 100 },
+  { label: 'Storage', value: 0, maxValue: 100 },
+  { label: 'Network', value: 0, maxValue: 100 },
+  { label: 'Graphics', value: 0, maxValue: 100 },
 ];
 
-<R8R primaryData={performanceData} />
+const data = [
+  {
+    label: 'Server Performance',
+    values: {
+      'CPU': 85,
+      'Memory': 92,
+      'Storage': 78,
+      'Network': 95,
+      'Graphics': 88
+    }
+  }
+];
+
+<R8R data={data} chart={chart} />
 ```
 
-### Comparing Two Datasets
+### Multiple Dataset Comparison
 
 ```jsx
-const currentData = [
-  { label: 'Design', value: 75 },
-  { label: 'Development', value: 85 },
-  { label: 'Testing', value: 90 },
-  { label: 'Documentation', value: 60 },
-  { label: 'Deployment', value: 80 },
+const chart = [
+  { label: 'Design', value: 0, maxValue: 100 },
+  { label: 'Development', value: 0, maxValue: 100 },
+  { label: 'Testing', value: 0, maxValue: 100 },
+  { label: 'Documentation', value: 0, maxValue: 100 },
+  { label: 'Deployment', value: 0, maxValue: 100 },
 ];
 
-const targetData = [
-  { label: 'Design', value: 90 },
-  { label: 'Development', value: 95 },
-  { label: 'Testing', value: 95 },
-  { label: 'Documentation', value: 85 },
-  { label: 'Deployment', value: 90 },
+const data = [
+  {
+    label: 'Current',
+    values: {
+      'Design': 75,
+      'Development': 85,
+      'Testing': 90,
+      'Documentation': 60,
+      'Deployment': 80
+    }
+  },
+  {
+    label: 'Target',
+    values: {
+      'Design': 90,
+      'Development': 95,
+      'Testing': 95,
+      'Documentation': 85,
+      'Deployment': 90
+    }
+  }
 ];
 
 <R8R 
-  primaryData={currentData}
-  secondaryData={targetData}
-  primaryColor="#3b82f6"
-  secondaryColor="#ef4444"
+  data={data}
+  chart={chart}
+  colors={['#3b82f6', '#ef4444']}
   showValues={true}
+  showLegend={true}
 />
 ```
 
-### Custom Styling
+### Dark Theme with Custom Colors
 
 ```jsx
 <R8R 
-  primaryData={data}
-  width={500}
-  height={500}
-  primaryColor="#10b981"
-  backgroundColor="#f8fafc"
-  gridColor="#cbd5e1"
-  showGrid={true}
-  showLabels={true}
+  data={data}
+  chart={chart}
+  theme="dark"
+  colors={['#10b981', '#f59e0b']}
+  backgroundColor="#222"
   showValues={true}
   animationDuration={1500}
-  className="my-custom-chart"
-  style={{ border: '2px solid #e2e8f0' }}
 />
 ```
 
-### Custom Max Values
+### Custom Legend Title
 
 ```jsx
-const dataWithCustomMax = [
-  { label: 'Accuracy', value: 95, maxValue: 100 },
-  { label: 'Speed', value: 180, maxValue: 200 },
-  { label: 'Cost', value: 75, maxValue: 100 },
-  { label: 'Efficiency', value: 85, maxValue: 100 },
-];
-
-<R8R primaryData={dataWithCustomMax} />
+<R8R 
+  data={data}
+  chart={chart}
+  legendTitle="Performance Metrics"
+  showLegend={true}
+/>
 ```
 
 ## Browser Support
@@ -196,9 +244,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
-### 1.0.0
-- Initial release
-- Zero-dependency radar chart component
-- Dual dataset comparison support
-- Full TypeScript support
-- Customizable styling and animations
+See [CHANGES.md](CHANGES.md) for a complete list of changes and version history.

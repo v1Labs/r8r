@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R8R - React Radar Chart Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #6b7280;
+            font-size: 18px;
+        }
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .example {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .example h3 {
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+        .example p {
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .code {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>R8R - React Radar Chart</h1>
+            <p>A modern, zero-dependency radar chart for visual comparisons</p>
+        </div>
+
+        <div class="examples">
+            <div class="example">
+                <h3>Basic Radar Chart</h3>
+                <p>Simple single dataset visualization</p>
+                <div class="chart-container" id="basic-chart"></div>
+                <div class="code">
+const data = [
+  { label: 'Speed', value: 85 },
+  { label: 'Reliability', value: 92 },
+  { label: 'Comfort', value: 78 },
+  { label: 'Safety', value: 95 },
+  { label: 'Efficiency', value: 88 }
+];
+
+&lt;R8R primaryData={data} /&gt;
+                </div>
+            </div>
+
+            <div class="example">
+                <h3>Dual Dataset Comparison</h3>
+                <p>Compare two datasets side by side</p>
+                <div class="chart-container" id="comparison-chart"></div>
+                <div class="code">
+const current = [
+  { label: 'Design', value: 75 },
+  { label: 'Development', value: 85 },
+  { label: 'Testing', value: 90 },
+  { label: 'Documentation', value: 60 },
+  { label: 'Deployment', value: 80 }
+];
+
+const target = [
+  { label: 'Design', value: 90 },
+  { label: 'Development', value: 95 },
+  { label: 'Testing', value: 95 },
+  { label: 'Documentation', value: 85 },
+  { label: 'Deployment', value: 90 }
+];
+
+&lt;R8R 
+  primaryData={current}
+  secondaryData={target}
+  showValues={true}
+/&gt;
+                </div>
+            </div>
+
+            <div class="example">
+                <h3>Custom Styling</h3>
+                <p>Customized colors and appearance</p>
+                <div class="chart-container" id="custom-chart"></div>
+                <div class="code">
+&lt;R8R 
+  primaryData={data}
+  primaryColor="#10b981"
+  backgroundColor="#f8fafc"
+  gridColor="#cbd5e1"
+  showValues={true}
+  animationDuration={1500}
+/&gt;
+                </div>
+            </div>
+
+            <div class="example">
+                <h3>Performance Metrics</h3>
+                <p>System performance visualization</p>
+                <div class="chart-container" id="performance-chart"></div>
+                <div class="code">
+const performance = [
+  { label: 'CPU', value: 85 },
+  { label: 'Memory', value: 92 },
+  { label: 'Storage', value: 78 },
+  { label: 'Network', value: 95 },
+  { label: 'Graphics', value: 88 }
+];
+
+&lt;R8R 
+  primaryData={performance}
+  primaryColor="#8b5cf6"
+  showGrid={true}
+  showLabels={true}
+/&gt;
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- R8R Component (when built) -->
+    <script type="text/babel">
+        // This would be replaced with the actual built component
+        // For demo purposes, we'll show the structure
+        
+        const { useState, useEffect, useMemo } = React;
+        
+        // Mock R8R component for demo
+        const R8R = ({ primaryData, secondaryData = [], width = 400, height = 400, 
+                      primaryColor = '#3b82f6', secondaryColor = '#ef4444',
+                      backgroundColor = '#ffffff', showValues = false }) => {
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(centerX, centerY) * 0.6;
+            
+            const createPolygon = (data, color) => {
+                if (!data || data.length === 0) return '';
+                const angleStep = (2 * Math.PI) / data.length;
+                const points = data.map((point, index) => {
+                    const angle = index * angleStep - Math.PI / 2;
+                    const pointRadius = radius * (point.value / 100);
+                    return `${centerX + pointRadius * Math.cos(angle)},${centerY + pointRadius * Math.sin(angle)}`;
+                });
+                return points.join(' ');
+            };
+            
+            return (
+                <div style={{ width, height, backgroundColor, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                    <svg width={width} height={height}>
+                        {/* Grid circles */}
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <circle
+                                key={i}
+                                cx={centerX}
+                                cy={centerY}
+                                r={(radius * i) / 5}
+                                fill="none"
+                                stroke="#e5e7eb"
+                                strokeWidth="1"
+                                opacity="0.3"
+                            />
+                        ))}
+                        
+                        {/* Axis lines */}
+                        {primaryData.map((point, index) => {
+                            const angle = (index * 2 * Math.PI) / primaryData.length - Math.PI / 2;
+                            const endX = centerX + radius * Math.cos(angle);
+                            const endY = centerY + radius * Math.sin(angle);
+                            return (
+                                <g key={index}>
+                                    <line
+                                        x1={centerX}
+                                        y1={centerY}
+                                        x2={endX}
+                                        y2={endY}
+                                        stroke="#e5e7eb"
+                                        strokeWidth="1"
+                                        opacity="0.5"
+                                    />
+                                    <text
+                                        x={endX + Math.cos(angle) * 20}
+                                        y={endY + Math.sin(angle) * 20}
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                        fontSize="12"
+                                        fill="#6b7280"
+                                    >
+                                        {point.label}
+                                    </text>
+                                </g>
+                            );
+                        })}
+                        
+                        {/* Secondary data */}
+                        {secondaryData.length > 0 && (
+                            <polygon
+                                points={createPolygon(secondaryData, secondaryColor)}
+                                fill={secondaryColor}
+                                fillOpacity="0.2"
+                                stroke={secondaryColor}
+                                strokeWidth="2"
+                            />
+                        )}
+                        
+                        {/* Primary data */}
+                        <polygon
+                            points={createPolygon(primaryData, primaryColor)}
+                            fill={primaryColor}
+                            fillOpacity="0.2"
+                            stroke={primaryColor}
+                            strokeWidth="3"
+                        />
+                    </svg>
+                </div>
+            );
+        };
+
+        // Demo data
+        const basicData = [
+            { label: 'Speed', value: 85 },
+            { label: 'Reliability', value: 92 },
+            { label: 'Comfort', value: 78 },
+            { label: 'Safety', value: 95 },
+            { label: 'Efficiency', value: 88 }
+        ];
+
+        const currentData = [
+            { label: 'Design', value: 75 },
+            { label: 'Development', value: 85 },
+            { label: 'Testing', value: 90 },
+            { label: 'Documentation', value: 60 },
+            { label: 'Deployment', value: 80 }
+        ];
+
+        const targetData = [
+            { label: 'Design', value: 90 },
+            { label: 'Development', value: 95 },
+            { label: 'Testing', value: 95 },
+            { label: 'Documentation', value: 85 },
+            { label: 'Deployment', value: 90 }
+        ];
+
+        const performanceData = [
+            { label: 'CPU', value: 85 },
+            { label: 'Memory', value: 92 },
+            { label: 'Storage', value: 78 },
+            { label: 'Network', value: 95 },
+            { label: 'Graphics', value: 88 }
+        ];
+
+        // Render demos
+        ReactDOM.render(
+            <R8R primaryData={basicData} />,
+            document.getElementById('basic-chart')
+        );
+
+        ReactDOM.render(
+            <R8R 
+                primaryData={currentData}
+                secondaryData={targetData}
+                showValues={true}
+            />,
+            document.getElementById('comparison-chart')
+        );
+
+        ReactDOM.render(
+            <R8R 
+                primaryData={basicData}
+                primaryColor="#10b981"
+                backgroundColor="#f8fafc"
+                gridColor="#cbd5e1"
+                showValues={true}
+            />,
+            document.getElementById('custom-chart')
+        );
+
+        ReactDOM.render(
+            <R8R 
+                primaryData={performanceData}
+                primaryColor="#8b5cf6"
+            />,
+            document.getElementById('performance-chart')
+        );
+    </script>
+</body>
+</html> 

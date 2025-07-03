@@ -42,7 +42,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/r8r.git"
+    "url": "git+https://github.com/yourusername/r8r.git"
   },
   "bugs": {
     "url": "https://github.com/yourusername/r8r/issues"

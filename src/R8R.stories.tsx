@@ -12,6 +12,19 @@ const meta: Meta<typeof R8R> = {
       },
     },
   },
+  decorators: [
+    (Story) => (
+      <div style={{ 
+        padding: '0', 
+        margin: '0',
+        width: '100%',
+        overflow: 'hidden',
+        boxSizing: 'border-box'
+      }}>
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     theme: {
       control: { type: 'select' },
@@ -21,6 +34,10 @@ const meta: Meta<typeof R8R> = {
     showGrid: {
       control: { type: 'boolean' },
       description: 'Whether to show grid lines',
+    },
+    gridColor: {
+      control: { type: 'color' },
+      description: 'Grid line color',
     },
     showLabels: {
       control: { type: 'boolean' },
@@ -38,12 +55,8 @@ const meta: Meta<typeof R8R> = {
       control: { type: 'range', min: 300, max: 800, step: 50 },
       description: 'Width of the chart in pixels',
     },
-    height: {
-      control: { type: 'range', min: 300, max: 800, step: 50 },
-      description: 'Height of the chart in pixels',
-    },
     animationDuration: {
-      control: { type: 'range', min: 0, max: 3000, step: 100 },
+      control: { type: 'range', min: 0, max: 1000, step: 50 },
       description: 'Animation duration in milliseconds',
     },
   },
@@ -146,14 +159,17 @@ export const Basic: Story = {
     data: basicData,
     chart: basicChart,
     width: 400,
-    height: 400,
     theme: 'light',
     showGrid: true,
     showLabels: true,
     showValues: false,
     showLegend: true,
     legendTitle: 'Performance',
-    animationDuration: 1000,
+    animationDuration: 200,
+    className: "",
+    style: {
+      fontFamily: "'san serif' !important"
+    }
   },
 };
 
@@ -162,7 +178,6 @@ export const Comparison: Story = {
     data: comparisonData,
     chart: basicChart,
     width: 500,
-    height: 500,
     theme: 'light',
     showGrid: true,
     showLabels: true,
@@ -170,7 +185,7 @@ export const Comparison: Story = {
     showLegend: true,
     legendTitle: 'Current vs Target',
     colors: ['#3b82f6', '#ef4444'],
-    animationDuration: 1000,
+    animationDuration: 200,
   },
 };
 
@@ -179,7 +194,6 @@ export const Performance: Story = {
     data: performanceData,
     chart: performanceChart,
     width: 600,
-    height: 500,
     theme: 'light',
     showGrid: true,
     showLabels: true,
@@ -187,7 +201,7 @@ export const Performance: Story = {
     showLegend: true,
     legendTitle: 'Server Performance',
     colors: ['#8b5cf6', '#06b6d4', '#84cc16'],
-    animationDuration: 1500,
+    animationDuration: 300,
   },
 };
 
@@ -196,7 +210,6 @@ export const ThreeDimensions: Story = {
     data: threeDimData,
     chart: threeDimChart,
     width: 400,
-    height: 400,
     theme: 'light',
     showGrid: true,
     showLabels: true,
@@ -204,7 +217,7 @@ export const ThreeDimensions: Story = {
     showLegend: true,
     legendTitle: 'Options Comparison',
     colors: ['#3b82f6', '#ef4444', '#10b981'],
-    animationDuration: 800,
+    animationDuration: 200,
   },
 };
 
@@ -213,7 +226,6 @@ export const DarkTheme: Story = {
     data: comparisonData,
     chart: basicChart,
     width: 500,
-    height: 500,
     theme: 'dark',
     showGrid: true,
     showLabels: true,
@@ -221,7 +233,7 @@ export const DarkTheme: Story = {
     showLegend: true,
     legendTitle: 'Dark Theme Demo',
     colors: ['#10b981', '#f59e0b'],
-    animationDuration: 1200,
+    animationDuration: 250,
   },
 };
 
@@ -230,7 +242,6 @@ export const CustomColors: Story = {
     data: performanceData,
     chart: performanceChart,
     width: 550,
-    height: 500,
     theme: 'light',
     showGrid: true,
     showLabels: true,
@@ -241,7 +252,7 @@ export const CustomColors: Story = {
     backgroundColor: '#f8fafc',
     gridColor: '#cbd5e1',
     textColor: '#1e293b',
-    animationDuration: 1000,
+    animationDuration: 200,
   },
 };
 
@@ -250,7 +261,6 @@ export const Minimal: Story = {
     data: basicData,
     chart: basicChart,
     width: 400,
-    height: 400,
     theme: 'light',
     showGrid: false,
     showLabels: false,

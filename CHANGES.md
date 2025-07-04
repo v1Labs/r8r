@@ -2,6 +2,79 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.5] - 2025-07-04
+
+### 📱 Responsive Design & Mobile Optimization
+- **Smart responsive layout**: Component automatically adapts to container size with ResizeObserver integration
+- **Mobile-first design**: Legend automatically stacks above chart when width ≤450px
+- **Touch-optimized interface**: Larger touch targets, improved readability, and better spacing on mobile
+- **Real-time container detection**: ResizeObserver monitors parent and body elements for size changes
+- **Storybook compatibility**: Special handling for `body.sb-show-main` element in Storybook environment
+- **Smart width calculation**: Uses container width when constrained, with 20px padding subtraction
+- **Dynamic height**: Removed height prop in favor of automatic height calculation based on content
+- **Automatic mobile detection**: Component detects when browser width is narrower than component width
+- **Responsive width adjustment**: Automatically sets width to `95vw` on mobile devices for optimal viewing
+- **Minimum width protection**: Ensures minimum width of 320px to prevent overflow on very small screens
+- **Enhanced small screen support**: Special optimizations for screens 480px and below
+- **Legend repositioning**: Moves legend above chart on mobile instead of side-by-side layout
+- **Horizontal legend layout**: Legend items display horizontally with wrap on mobile for better space utilization
+- **Mobile-optimized sizing**: Smaller fonts, padding, and interactive elements for touch-friendly experience
+- **Responsive label positioning**: Adjusted label and value positioning for mobile screens
+- **Mobile layout fixes**: Added margin auto for centering and fixed legend width to match chart width
+
+### 🎨 Visual & Theme Improvements
+- **Enhanced grid colors**: Updated light theme to `#dbe4ef` and dark theme to `#6b6d6f` for better visibility
+- **Removed grid opacity**: Grid elements now display at full opacity for better reference
+- **Border control**: Added `showBorder` prop (defaults to true) using grid color for visual separation
+- **Improved dark theme**: Better contrast and visibility with new grid color
+- **Enhanced data point visibility**: Larger bubbles (16px radius) and improved font sizes on mobile
+- **Updated default grid color**: Changed from theme-specific colors to consistent `#a3b0bf` for both light and dark themes
+- **Improved visual consistency**: Grid lines now have the same color across all themes for better user experience
+- **Enhanced Storybook controls**: Added `gridColor` control to Storybook for interactive testing
+- **Better accessibility**: More consistent grid visibility across different theme contexts
+
+### 🔧 Interactive & Layout Enhancements
+- **Legend auto-width**: Legend uses `auto` width when stacked above chart to prevent overflow
+- **Improved spacing**: 32px padding subtraction when legend is to the left, 10px margin-top for SVG
+- **Enhanced text sizing**: 50% larger font sizes for values and max values when legend is on top
+- **Better label positioning**: Increased label offset from max values for improved readability
+- **Optimized legend layout**: Vertical centering and improved spacing for mobile legend display
+
+### ⚡ Performance & Technical Improvements
+- **ResizeObserver integration**: Real-time container size detection without polling
+- **Optimized rendering**: Reduced unnecessary re-renders and improved performance
+- **Simplified width logic**: Single observer approach with fallback to parent element
+- **Better mobile detection**: Uses actual container width instead of viewport width
+- **Enhanced Storybook support**: CSS override to remove padding from Storybook root element
+
+### 📚 Documentation & Development
+- **Updated README**: Comprehensive documentation of responsive design and new features
+- **Removed Mobile story**: Cleaned up Storybook by removing outdated Mobile story
+- **Enhanced examples**: Updated all examples to reflect current API and responsive behavior
+- **Development workflow**: Improved Storybook setup with CSS overrides for better testing
+
+### 🎯 API Changes
+```typescript
+// New responsive behavior - automatically adapts to container
+<R8R 
+  data={data}
+  chart={chart}
+  width={400} // Uses container width when smaller, with smart padding
+  showBorder={true} // New prop for visual separation
+/>
+
+// Mobile layout automatically activates when container ≤450px
+// Legend moves above chart with optimized touch targets
+```
+
+### ✨ New Features
+- **Responsive design**: Automatic mobile layout with legend stacking
+- **Smart sizing**: ResizeObserver integration for real-time container detection
+- **Border control**: `showBorder` prop for better visual separation
+- **Touch optimization**: Larger touch targets and improved mobile readability
+- **Enhanced themes**: Updated grid colors for better visibility across themes
+- **Performance optimization**: Reduced re-renders and improved efficiency
+
 ## [1.0.4] - 2025-07-04
 
 ### 🎯 Zero Dependencies Achievement

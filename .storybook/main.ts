@@ -7,9 +7,7 @@ const config: StorybookConfig = {
   ],
   "addons": [
     "@storybook/addon-webpack5-compiler-swc",
-    "@storybook/addon-docs",
-    "@storybook/addon-controls",
-    "@storybook/addon-viewport"
+    "@storybook/addon-docs"
   ],
   "framework": {
     "name": "@storybook/react-webpack5",

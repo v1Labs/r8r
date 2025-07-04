@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 export interface DataPoint {
   label: string;
@@ -19,8 +19,6 @@ export interface R8RProps {
   chart: DataPoint[];
   /** Width of the chart in pixels */
   width?: number;
-  /** Height of the chart in pixels */
-  height?: number;
   /** Theme preset ('light' | 'dark') */
   theme?: 'light' | 'dark';
   /** Background color of the chart */
@@ -45,6 +43,8 @@ export interface R8RProps {
   showLegend?: boolean;
   /** Title for the legend (empty string hides the title) */
   legendTitle?: string;
+  /** Whether to show border around the chart */
+  showBorder?: boolean;
   /** Animation duration in milliseconds */
   animationDuration?: number;
   /** Custom CSS class name */
@@ -63,14 +63,14 @@ const themes: Record<string, {
 }> = {
   light: {
     backgroundColor: '#ffffff',
-    gridColor: '#d1d5db',
+    gridColor: '#dbe4ef',
     textColor: '#374151',
     legendBackgroundColor: '#f9fafb',
     legendBorderColor: '#e5e7eb',
   },
   dark: {
     backgroundColor: '#1f2937',
-    gridColor: '#4b5563',
+    gridColor: '#6b6d6f',
     textColor: '#f9fafb',
     legendBackgroundColor: '#111827',
     legendBorderColor: '#374151',
@@ -95,7 +95,6 @@ const R8R: React.FC<R8RProps> = ({
   data,
   chart,
   width = 400,
-  height = 400,
   theme = 'light',
   backgroundColor,
   gridColor,
@@ -108,13 +107,123 @@ const R8R: React.FC<R8RProps> = ({
   showValues = false,
   showLegend = true,
   legendTitle = '',
-  animationDuration = 1000,
+  showBorder = true,
+  animationDuration = 200,
   className = '',
   style = {},
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [visibleDatasets, setVisibleDatasets] = useState<Set<number>>(new Set(data.map((_, index) => index)));
   const [hoveredDataset, setHoveredDataset] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Get container width
+  useEffect(() => {
+    const updateContainerWidth = () => {
+      if (!containerRef.current) return;
+      
+      // Try to find the Storybook main container first
+      const storybookMain = document.querySelector('body.sb-show-main');
+      let observerElement: HTMLElement | null = null;
+      
+      if (storybookMain) {
+        // Use Storybook's main container
+        observerElement = storybookMain as HTMLElement;
+        console.log('Using Storybook main container for width calculation');
+      } else {
+        // Fallback to parent element
+        observerElement = containerRef.current.parentElement;
+        console.log('Using parent element for width calculation');
+      }
+      
+      if (observerElement) {
+        const observerWidth = observerElement.getBoundingClientRect().width;
+        // Set chart width to minimum of observer element width and width prop
+        // If observer element is smaller than width prop, subtract 20px for padding
+        const availableWidth = observerWidth < width ? observerWidth - 20 : Math.min(observerWidth, width);
+        
+        console.log('Width calculation:', {
+          observerWidth,
+          widthProp: width,
+          availableWidth
+        });
+        
+        setContainerWidth(availableWidth);
+      } else {
+        // Fallback to viewport width
+        console.log('No observer element found, using viewport width:', window.innerWidth);
+        setContainerWidth(Math.min(window.innerWidth, width));
+      }
+    };
+
+    // Initial update
+    updateContainerWidth();
+
+    // Set up ResizeObserver
+    let resizeObserver: ResizeObserver | null = null;
+    
+    // Try to find the Storybook main container first
+    const storybookMain = document.querySelector('body.sb-show-main');
+    let observerElement: HTMLElement | null = null;
+    
+    if (storybookMain) {
+      // Use Storybook's main container
+      observerElement = storybookMain as HTMLElement;
+      console.log('Setting up ResizeObserver for Storybook main container');
+    } else {
+      // Fallback to parent element
+      observerElement = containerRef.current?.parentElement || null;
+      console.log('Setting up ResizeObserver for parent element');
+    }
+    
+    if (observerElement) {
+      resizeObserver = new ResizeObserver((entries) => {
+        console.log('ResizeObserver triggered with', entries.length, 'entries');
+        updateContainerWidth();
+      });
+      
+      // Observe the determined element
+      resizeObserver.observe(observerElement);
+    }
+
+    // Window resize listener as backup
+    const handleResize = () => {
+      console.log('Window resize detected');
+      updateContainerWidth();
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) {
+        console.log('Disconnecting ResizeObserver');
+        resizeObserver.disconnect();
+      }
+    };
+  }, [width]);
+
+  // Mobile detection - now based on whether we should stack legend
+  useEffect(() => {
+    const checkMobile = () => {
+      // Use the observed container width directly
+      const availableWidth = containerWidth || window.innerWidth;
+      const actualWidth = availableWidth >= width ? width : availableWidth;
+      const shouldStackLegend = actualWidth < 450;
+      
+      console.log('Mobile detection:', {
+        availableWidth,
+        actualWidth,
+        shouldStackLegend
+      });
+      
+      setIsMobile(shouldStackLegend);
+    };
+
+    checkMobile();
+  }, [width, containerWidth]);
 
   // Merge theme with custom overrides
   const currentTheme = useMemo(() => {
@@ -143,12 +252,40 @@ const R8R: React.FC<R8RProps> = ({
 
   // Calculate chart dimensions and positioning
   const chartConfig = useMemo(() => {
-    const legendWidth = showLegend ? 120 : 0;
-    const chartWidth = width - legendWidth;
+    // Use the observed container width directly
+    const availableWidth = containerWidth || window.innerWidth;
+    
+    // Determine actual width: use width prop if container is larger, otherwise use container width
+    const actualWidth = availableWidth >= width ? width : availableWidth;
+    
+    // Determine if we should stack legend above chart (when component is narrow)
+    const shouldStackLegend = actualWidth < 450;
+    
+    // Calculate legend dimensions
+    const legendWidth = showLegend && !shouldStackLegend ? 120 : 0;
+    const legendHeight = showLegend && shouldStackLegend ? 80 : 0;
+    
+    // Chart dimensions - subtract 32px for legend padding when legend is to the left
+    const chartWidth = actualWidth - legendWidth - (showLegend && !shouldStackLegend ? 32 : 0);
+    const chartHeight = chartWidth; // Make chart square
+    
+    // Center and radius
     const centerX = chartWidth / 2;
-    const centerY = height / 2;
+    const centerY = chartHeight / 2;
     const radius = Math.min(centerX, centerY) * 0.7;
     const maxValue = Math.max(...chart.map(d => d.maxValue || 100));
+
+    // Dynamic height calculation
+    const totalHeight = chartHeight + legendHeight;
+
+    console.log('Chart config updated:', {
+      availableWidth,
+      actualWidth,
+      shouldStackLegend,
+      chartWidth,
+      chartHeight,
+      totalHeight
+    });
 
     return {
       centerX,
@@ -156,9 +293,14 @@ const R8R: React.FC<R8RProps> = ({
       radius,
       maxValue,
       legendWidth,
+      legendHeight,
       chartWidth,
+      chartHeight,
+      actualWidth,
+      totalHeight,
+      shouldStackLegend,
     };
-  }, [width, height, chart, showLegend]);
+  }, [width, chart, showLegend, containerWidth]);
 
   // Calculate polygon points for a dataset
   const calculatePoints = (dataset: Dataset, color: string) => {
@@ -278,90 +420,118 @@ const R8R: React.FC<R8RProps> = ({
     <div
       className={`r8r-chart ${className}`}
       style={{
-        width,
-        height,
+        width: chartConfig.actualWidth,
+        height: chartConfig.totalHeight,
         backgroundColor: currentTheme.backgroundColor,
         borderRadius: '8px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        border: showBorder ? `1px solid ${currentTheme.gridColor}` : 'none',
         display: 'flex',
+        flexDirection: chartConfig.shouldStackLegend ? 'column' : 'row',
         transition: `all ${animationDuration}ms ease-in-out`,
         opacity: isAnimating ? 0.8 : 1,
+        margin: '0',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
         ...style,
       }}
+      ref={containerRef}
     >
       {/* Legend */}
       {showLegend && (
         <div
           style={{
-            width: chartConfig.legendWidth,
-            padding: '16px',
-            borderRight: `1px solid ${currentTheme.legendBorderColor}`,
+            width: chartConfig.shouldStackLegend ? 'auto' : chartConfig.legendWidth,
+            height: chartConfig.shouldStackLegend ? chartConfig.legendHeight : 'auto',
+            padding: chartConfig.shouldStackLegend ? '8px' : '16px',
+            borderRight: chartConfig.shouldStackLegend ? 'none' : `1px solid ${currentTheme.legendBorderColor}`,
+            borderBottom: chartConfig.shouldStackLegend ? `1px solid ${currentTheme.legendBorderColor}` : 'none',
             backgroundColor: currentTheme.legendBackgroundColor,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
+            flexWrap: 'nowrap',
+            justifyContent: chartConfig.shouldStackLegend ? 'center' : 'center',
+            alignItems: 'stretch',
             gap: '8px',
           }}
         >
-          <h3 style={{ 
-            margin: '0 0 12px 0', 
-            fontSize: '14px', 
-            fontWeight: '600',
-            color: currentTheme.textColor 
+          {legendTitle && (
+            <h3 style={{ 
+              margin: '0 0 8px 0', 
+              fontSize: chartConfig.shouldStackLegend ? '14px' : '14px', 
+              fontWeight: '600',
+              color: currentTheme.textColor,
+              flexShrink: 0,
+              textAlign: chartConfig.shouldStackLegend ? 'center' : 'left',
+            }}>
+              {legendTitle}
+            </h3>
+          )}
+          <div style={{
+            display: 'flex',
+            flexDirection: chartConfig.shouldStackLegend ? 'row' : 'column',
+            flexWrap: chartConfig.shouldStackLegend ? 'wrap' : 'nowrap',
+            justifyContent: chartConfig.shouldStackLegend ? 'center' : 'flex-start',
+            alignItems: chartConfig.shouldStackLegend ? 'center' : 'stretch',
+            gap: chartConfig.shouldStackLegend ? '6px' : '8px',
           }}>
-            {legendTitle}
-          </h3>
-          {allDatasetPoints.map(({ dataset, color, index }) => {
-            const isVisible = visibleDatasets.has(index);
-            const isHovered = hoveredDataset === index;
-            const displayColor = getDatasetColor(index, color);
-            
-            return (
-              <div
-                key={index}
-                onClick={() => toggleDataset(index)}
-                onMouseEnter={() => setHoveredDataset(index)}
-                onMouseLeave={() => setHoveredDataset(null)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: currentTheme.textColor,
-                  opacity: isVisible ? 1 : 0.4,
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  backgroundColor: isVisible ? `${color}20` : 'transparent',
-                  border: `1px solid ${isVisible ? color : 'transparent'}`,
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                }}
-              >
-                <div style={{
-                  width: '12px',
-                  height: '12px',
-                  backgroundColor: displayColor,
-                  borderRadius: '2px',
-                  opacity: isVisible ? 1 : 0.5
-                }} />
-                <div style={{ flex: 1 }}>
-                  <div>{dataset.label}</div>
+            {allDatasetPoints.map(({ dataset, color, index }) => {
+              const isVisible = visibleDatasets.has(index);
+              const isHovered = hoveredDataset === index;
+              const displayColor = getDatasetColor(index, color);
+              const isVerySmallScreen = chartConfig.actualWidth <= 480;
+              
+              return (
+                <div
+                  key={index}
+                  onClick={() => toggleDataset(index)}
+                  onMouseEnter={() => setHoveredDataset(index)}
+                  onMouseLeave={() => setHoveredDataset(null)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: isVerySmallScreen ? '4px' : '6px',
+                    cursor: 'pointer',
+                    fontSize: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '12px' : '13px') : '12px',
+                    color: currentTheme.textColor,
+                    opacity: isVisible ? 1 : 0.4,
+                    padding: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '3px 6px' : '4px 8px') : '4px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: isVisible ? `${color}20` : 'transparent',
+                    border: `1px solid ${isVisible ? color : 'transparent'}`,
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <div style={{
+                    width: isVerySmallScreen ? '10px' : (chartConfig.shouldStackLegend ? '12px' : '12px'),
+                    height: isVerySmallScreen ? '10px' : (chartConfig.shouldStackLegend ? '12px' : '12px'),
+                    backgroundColor: displayColor,
+                    borderRadius: '2px',
+                    opacity: isVisible ? 1 : 0.5,
+                    flexShrink: 0,
+                  }} />
+                  <div style={{ flexShrink: 0 }}>
+                    {dataset.label}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* Chart */}
       <svg
         width={chartConfig.chartWidth}
-        height={height}
+        height={chartConfig.chartHeight}
         style={{
           display: 'block',
           transition: `all ${animationDuration}ms ease-in-out`,
           opacity: isAnimating ? 0.8 : 1,
+          marginTop: !chartConfig.shouldStackLegend ? '10px' : '0',
         }}
       >
         {/* Grid circles */}
@@ -374,7 +544,6 @@ const R8R: React.FC<R8RProps> = ({
             fill="none"
             stroke={currentTheme.gridColor}
             strokeWidth="1"
-            opacity="0.3"
           />
         ))}
 
@@ -388,16 +557,15 @@ const R8R: React.FC<R8RProps> = ({
               y2={line.y2}
               stroke={currentTheme.gridColor}
               strokeWidth="1"
-              opacity="0.5"
             />
             {showLabels && (
               <text
-                x={line.x2 + Math.cos(line.angle) * 15}
-                y={line.y2 + Math.sin(line.angle) * 15}
-                dy={line.y2 > chartConfig.centerY ? 15 : -15}
+                x={line.x2 + Math.cos(line.angle) * (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15))}
+                y={line.y2 + Math.sin(line.angle) * (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15))}
+                dy={line.y2 > chartConfig.centerY ? (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15)) : (chartConfig.actualWidth <= 480 ? -8 : (chartConfig.shouldStackLegend ? -18 : -15))}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize="12"
+                fontSize={chartConfig.actualWidth <= 480 ? "8" : (chartConfig.shouldStackLegend ? "12" : "12")}
                 fill={currentTheme.textColor}
                 fontWeight="500"
               >
@@ -405,11 +573,11 @@ const R8R: React.FC<R8RProps> = ({
               </text>
             )}
             <text
-              x={line.x2 + Math.cos(line.angle) * 15}
-              y={line.y2 + Math.sin(line.angle) * 15}
+              x={line.x2 + Math.cos(line.angle) * (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15))}
+              y={line.y2 + Math.sin(line.angle) * (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15))}
               textAnchor="middle"
               dominantBaseline="middle"
-              fontSize="14"
+              fontSize={chartConfig.actualWidth <= 480 ? "9" : (chartConfig.shouldStackLegend ? "21" : "14")}
               fill={currentTheme.textColor}
               fontWeight="700"
             >
@@ -442,7 +610,7 @@ const R8R: React.FC<R8RProps> = ({
                       <circle
                         cx={point.x}
                         cy={point.y}
-                        r="12"
+                        r={chartConfig.actualWidth <= 480 ? "12" : (chartConfig.shouldStackLegend ? "16" : "12")}
                         fill={displayColor}
                         opacity="0.9"
                       />
@@ -451,7 +619,7 @@ const R8R: React.FC<R8RProps> = ({
                         y={point.y}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        fontSize="10"
+                        fontSize={chartConfig.actualWidth <= 480 ? "8" : (chartConfig.shouldStackLegend ? "12" : "10")}
                         fill="white"
                         fontWeight="700"
                       >

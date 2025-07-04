@@ -9,13 +9,15 @@ R8R (pronounced "radar") is an open source, minimalist component for comparing m
 - 🎯 **Zero Dependencies** - Pure React with no external chart libraries
 - 📊 **Multiple Dataset Support** - Compare unlimited datasets with automatic color cycling
 - 🎨 **Fully Customizable** - Colors, themes, sizes, animations, and styling
-- 📱 **Responsive** - Flexible width and height options
-- ⚡ **Performance Optimized** - Uses React hooks efficiently
+- 📱 **Responsive Design** - Automatically adapts to container size and mobile devices
+- ⚡ **Performance Optimized** - Uses React hooks efficiently with ResizeObserver
 - 🔧 **TypeScript Ready** - Full TypeScript support with interfaces
 - 🎭 **Smooth Animations** - Configurable animation duration
 - 🏷️ **Flexible Labels** - Show/hide axis labels, data values, and legend titles
 - 🌙 **Theme System** - Built-in light and dark themes with custom overrides
 - 📋 **Interactive Legend** - Toggle datasets on/off with clean visual states
+- 🔄 **Smart Layout** - Legend automatically stacks above chart on mobile devices
+- 🎯 **Touch Optimized** - Larger touch targets and improved readability on mobile
 
 ## Installation
 
@@ -61,7 +63,6 @@ function App() {
       data={data}
       chart={chart}
       width={400}
-      height={400}
     />
   );
 }
@@ -95,7 +96,6 @@ npm run build
 | `data` | `Dataset[]` | **Required** | Array of datasets to display |
 | `chart` | `DataPoint[]` | **Required** | Chart structure defining the axes |
 | `width` | `number` | `400` | Width of the chart in pixels |
-| `height` | `number` | `400` | Height of the chart in pixels |
 | `theme` | `'light' \| 'dark'` | `'light'` | Theme preset |
 | `backgroundColor` | `string` | Theme default | Background color of the chart |
 | `gridColor` | `string` | Theme default | Grid line color |
@@ -108,7 +108,8 @@ npm run build
 | `showValues` | `boolean` | `false` | Whether to show data point values |
 | `showLegend` | `boolean` | `true` | Whether to show legend |
 | `legendTitle` | `string` | `''` | Title for the legend (empty hides title) |
-| `animationDuration` | `number` | `1000` | Animation duration in milliseconds |
+| `showBorder` | `boolean` | `true` | Whether to show border around the chart |
+| `animationDuration` | `number` | `200` | Animation duration in milliseconds |
 | `className` | `string` | `''` | Custom CSS class name |
 | `style` | `React.CSSProperties` | `{}` | Custom CSS styles |
 
@@ -127,6 +128,26 @@ interface Dataset {
   color?: string;                   // Optional custom color for this dataset
 }
 ```
+
+## Responsive Design
+
+R8R automatically adapts to different screen sizes and container constraints:
+
+### Desktop Layout
+- Chart and legend display side-by-side
+- Legend positioned to the right of the chart
+- Optimized for larger screens and mouse interaction
+
+### Mobile Layout (≤450px width)
+- Legend automatically moves above the chart
+- Larger touch targets and improved readability
+- Optimized font sizes and spacing for mobile devices
+- Horizontal legend layout with wrapping
+
+### Smart Sizing
+- Automatically uses container width when smaller than specified width
+- Maintains aspect ratio and readability across all screen sizes
+- ResizeObserver integration for real-time container size detection
 
 ## Examples
 
@@ -227,10 +248,30 @@ const data = [
 />
 ```
 
+### Mobile Responsive
+
+R8R automatically adapts to mobile devices:
+
+- **Automatic detection**: When container width is ≤450px, mobile mode activates
+- **Responsive layout**: Legend moves above chart with optimized spacing
+- **Touch-friendly**: Larger touch targets and improved readability
+- **Smart sizing**: Automatically adjusts to container constraints
+- **Real-time updates**: ResizeObserver detects container size changes
+
+```jsx
+// Component automatically handles mobile layout
+<R8R 
+  data={data}
+  chart={chart}
+  width={800} // Will trigger mobile mode on screens ≤450px
+  showLegend={true}
+/>
+```
+
 ## Browser Support
 
 - React 16.8+ (for hooks support)
-- Modern browsers with SVG support
+- Modern browsers with SVG and ResizeObserver support
 - IE11+ (with polyfills if needed)
 
 ## Development
@@ -263,4 +304,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
-See [CHANGES.md](CHANGES.md) for a complete list of changes and version history.
+### Recent Updates
+
+- **Responsive Design**: Automatic mobile layout with legend stacking above chart
+- **Smart Sizing**: ResizeObserver integration for real-time container size detection
+- **Mobile Optimization**: Larger touch targets, improved readability, and better spacing
+- **Enhanced Themes**: Updated grid colors and improved dark theme visibility
+- **Interactive Improvements**: Better data point visibility and hover states
+- **Border Control**: Added `showBorder` prop for better visual separation
+- **Performance**: Optimized rendering and reduced unnecessary re-renders

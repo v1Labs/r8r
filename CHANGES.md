@@ -2,6 +2,74 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.4] - 2025-01-27
+
+### 🎯 Zero Dependencies Achievement
+- **Removed `tslib` dependency**: Now truly zero-dependency with no runtime dependencies
+- **Updated TypeScript configuration**: Added `importHelpers: false` and `noEmitHelpers: true` to prevent helper function imports
+- **Enhanced Rollup configuration**: Added `importHelpers: false` to TypeScript plugin for clean builds
+- **Smaller bundle size**: Eliminated runtime helper functions for better performance
+
+### 🛠️ Development Environment Upgrade
+- **Upgraded to Node.js 20**: Now compatible with latest development tools and Storybook 9
+- **Installed Storybook**: Professional component development environment with interactive stories
+- **Comprehensive story collection**: 7 different stories showcasing all R8R features:
+  - Basic single dataset visualization
+  - Multiple dataset comparison
+  - Performance metrics with 3 datasets
+  - Three-dimensional analysis
+  - Dark theme demonstration
+  - Custom color schemes
+  - Minimal configuration
+- **Interactive controls**: Real-time prop adjustment with Storybook controls
+- **Professional documentation**: Living documentation with interactive examples
+
+### 🧹 Repository Cleanup
+- **Removed example directory**: Eliminated 60KB duplicate implementation
+- **Single source of truth**: Only one implementation to maintain
+- **Reduced maintenance burden**: No more sync issues between example and actual component
+- **Updated README**: Points users to v1Labs website for demos
+- **Better project structure**: Cleaner, more professional repository
+
+### 📚 Documentation Improvements
+- **Updated README**: Added development section with Storybook instructions
+- **Live demo reference**: Directs users to v1Labs website for interactive examples
+- **Development workflow**: Clear instructions for component development and testing
+- **Professional presentation**: Better organization and clearer usage examples
+
+### 🔧 Technical Improvements
+- **Enhanced build process**: Cleaner TypeScript compilation without helper functions
+- **Better development experience**: Hot reloading and interactive testing with Storybook
+- **Improved type safety**: Better TypeScript configuration for development
+- **Modern tooling**: Latest Node.js and development dependencies
+
+### 🎯 Development Workflow
+```bash
+# Start Storybook for interactive development
+npm run storybook
+
+# Build the component for production
+npm run build
+
+# Clean build artifacts
+npm run clean
+```
+
+### ✨ New Features
+- **Interactive development**: Real-time component testing with Storybook
+- **Multiple story variations**: 7 different use cases for comprehensive testing
+- **Professional controls**: Interactive prop adjustment during development
+- **Living documentation**: Stories serve as both tests and documentation
+
+### 🎨 Storybook Stories
+- **Basic**: Simple single dataset visualization
+- **Comparison**: Multiple dataset comparison with custom colors
+- **Performance**: Server performance metrics with 3 datasets
+- **ThreeDimensions**: Simple 3-axis chart demonstration
+- **DarkTheme**: Dark theme with custom color scheme
+- **CustomColors**: Custom color palette and styling
+- **Minimal**: Minimal configuration without grid, labels, or legend
+
 ## [1.0.3] - 2025-01-27
 
 ### 🎯 Enhanced Value Display & Interaction

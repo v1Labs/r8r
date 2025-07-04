@@ -67,6 +67,25 @@ function App() {
 }
 ```
 
+## Live Demo
+
+For interactive examples and demos, visit the [R8R demo page on v1Labs](https://v1labs.com/r8r).
+
+## Development
+
+This project uses Storybook for component development and testing. To run the development environment:
+
+```bash
+# Install dependencies
+npm install
+
+# Start Storybook
+npm run storybook
+
+# Build the component
+npm run build
+```
+
 ## API Reference
 
 ### Props

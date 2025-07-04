@@ -2,7 +2,7 @@
 
 All notable changes to R8R will be documented in this file.
 
-## [1.0.4] - 2025-01-27
+## [1.0.4] - 2025-07-04
 
 ### 🎯 Zero Dependencies Achievement
 - **Removed `tslib` dependency**: Now truly zero-dependency with no runtime dependencies
@@ -70,7 +70,7 @@ npm run clean
 - **CustomColors**: Custom color palette and styling
 - **Minimal**: Minimal configuration without grid, labels, or legend
 
-## [1.0.3] - 2025-01-27
+## [1.0.3] - 2025-07-03
 
 ### 🎯 Enhanced Value Display & Interaction
 - **Fixed `showValues` functionality**: Now properly displays `maxValue` at the end of each spoke

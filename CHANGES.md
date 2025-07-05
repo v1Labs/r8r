@@ -2,6 +2,75 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.7] - 2025-07-05
+
+### 🎬 Interactive Play Functionality
+- **New play button**: Added `showPlayButton` prop (defaults to false) for animated data sequence playback
+- **Timeline slider**: Added `showTimeline` prop (defaults to false) for manual data exploration
+- **Configurable play speed**: Added `playSpeed` prop (defaults to 1000ms) to control animation timing
+- **Time-series visualization**: Perfect for showing data progression over time (e.g., monthly KPIs)
+- **Sequential data reveal**: Play button animates through datasets in order with smooth transitions
+- **Manual timeline control**: Slider allows users to jump to any point in the data sequence
+- **Smart state management**: Datasets automatically transition between hidden, inactive, and active states
+- **Centered controls**: Play button and timeline are positioned directly below the radar chart
+
+### 🎯 Play Sequence Behavior
+- **Initial state**: All datasets start hidden when play begins
+- **Step-by-step reveal**: Each dataset becomes active with numbers visible for the configured duration
+- **Previous step handling**: Previous datasets become inactive (grayscale) when next step begins
+- **Final state**: Last dataset remains active with numbers visible after sequence completes
+- **Pause/resume**: Play button toggles between play and pause states
+- **Timeline sync**: Manual timeline changes automatically stop any running play sequence
+
+### 🎨 Visual Design
+- **Professional controls**: Styled play button with play/pause icons and hover effects
+- **Responsive timeline**: Slider with gradient fill showing progress through the sequence
+- **Step indicators**: Timeline shows current step label and step count
+- **Theme integration**: Controls use the same theme colors as the chart
+- **Smooth animations**: All state transitions are animated for better user experience
+
+### 🔧 Technical Implementation
+- **State management**: New state variables for play status, current step, and animation timing
+- **Timeout handling**: Proper cleanup of animation timeouts to prevent memory leaks
+- **Event handling**: Click handlers for play button and change handlers for timeline slider
+- **Layout updates**: Container height automatically adjusts when controls are enabled
+- **Mobile compatibility**: Controls work seamlessly with existing responsive design
+
+### 🎯 API Changes
+```typescript
+interface R8RProps {
+  // ... existing props ...
+  showPlayButton?: boolean;  // New: Show play button for animated sequence
+  showTimeline?: boolean;    // New: Show timeline slider for manual control
+  playSpeed?: number;        // New: Animation speed in milliseconds (default: 1000)
+}
+
+// Example usage with play functionality
+<R8R 
+  data={monthlyKpiData}
+  chart={kpiChart}
+  showPlayButton={true}
+  showTimeline={true}
+  playSpeed={1500}
+  legendTitle="Monthly KPIs"
+/>
+```
+
+### ✨ New Features
+- **Time-series visualization**: Perfect for showing data progression over time
+- **Interactive playback**: Click play to animate through datasets sequentially
+- **Manual exploration**: Use timeline slider to jump to any point in the sequence
+- **Configurable timing**: Adjust play speed to match presentation needs
+- **Professional controls**: Clean, intuitive interface for data exploration
+- **Seamless integration**: Works with all existing chart features and themes
+
+### 📊 Use Cases
+- **Monthly KPI tracking**: Show how metrics improve over time
+- **Product development**: Visualize feature progress across different phases
+- **Performance monitoring**: Track system performance changes
+- **A/B testing results**: Compare different test phases
+- **Project milestones**: Show progress through different project stages
+
 ## [1.0.6] - 2025-07-05
 
 ### 🎯 Enhanced Dataset Status System

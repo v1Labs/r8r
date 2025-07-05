@@ -59,6 +59,18 @@ const meta: Meta<typeof R8R> = {
       control: { type: 'range', min: 0, max: 1000, step: 50 },
       description: 'Animation duration in milliseconds',
     },
+    showPlayButton: {
+      control: { type: 'boolean' },
+      description: 'Whether to show play button for animated data sequence',
+    },
+    showTimeline: {
+      control: { type: 'boolean' },
+      description: 'Whether to show timeline slider for manual data exploration',
+    },
+    playSpeed: {
+      control: { type: 'range', min: 500, max: 3000, step: 100 },
+      description: 'Speed of play animation in milliseconds',
+    },
   },
 };
 
@@ -309,6 +321,92 @@ export const StatusSystem: Story = {
     docs: {
       description: {
         story: 'Demonstrates the new status system with hidden, inactive, and active datasets. Click legend items to toggle between active and inactive. Hover to show/hide number bubbles.',
+      },
+    },
+  },
+};
+
+// Time-series data for play functionality
+const timeSeriesData = [
+  {
+    label: 'January',
+    values: { 'Revenue': 65, 'Users': 45, 'Engagement': 70, 'Retention': 55, 'Growth': 60 },
+    status: 'active' as const,
+    showNumbers: true
+  },
+  {
+    label: 'February',
+    values: { 'Revenue': 69, 'Users': 52, 'Engagement': 75, 'Retention': 58, 'Growth': 64 },
+    status: 'hidden' as const,
+    showNumbers: false
+  },
+  {
+    label: 'March',
+    values: { 'Revenue': 78, 'Users': 61, 'Engagement': 79, 'Retention': 65, 'Growth': 71 },
+    status: 'hidden' as const,
+    showNumbers: false
+  },
+  {
+    label: 'April',
+    values: { 'Revenue': 85, 'Users': 69, 'Engagement': 86, 'Retention': 72, 'Growth': 78 },
+    status: 'hidden' as const,
+    showNumbers: false
+  },
+  {
+    label: 'May',
+    values: { 'Revenue': 91, 'Users': 77, 'Engagement': 89, 'Retention': 79, 'Growth': 85 },
+    status: 'hidden' as const,
+    showNumbers: false
+  },
+  {
+    label: 'June',
+    values: { 'Revenue': 88, 'Users': 83, 'Engagement': 92, 'Retention': 81, 'Growth': 89 },
+    status: 'hidden' as const,
+    showNumbers: false
+  },
+  {
+    label: 'July',
+    values: { 'Revenue': 93, 'Users': 86, 'Engagement': 95, 'Retention': 87, 'Growth': 91 },
+    status: 'hidden' as const,
+    showNumbers: false
+  },
+  {
+    label: 'August',
+    values: { 'Revenue': 96, 'Users': 89, 'Engagement': 98, 'Retention': 92, 'Growth': 94 },
+    status: 'hidden' as const,
+    showNumbers: false
+  }
+];
+
+const kpiChart = [
+  { label: 'Revenue', value: 0, maxValue: 100 },
+  { label: 'Users', value: 0, maxValue: 100 },
+  { label: 'Engagement', value: 0, maxValue: 100 },
+  { label: 'Retention', value: 0, maxValue: 100 },
+  { label: 'Growth', value: 0, maxValue: 100 }
+];
+
+export const PlayFunctionality: Story = {
+  args: {
+    data: timeSeriesData,
+    chart: kpiChart,
+    width: 500,
+    theme: 'light',
+    showGrid: true,
+    showLabels: true,
+    showValues: false,
+    showLegend: true,
+    legendTitle: 'Monthly KPIs',
+    showPlayButton: true,
+    showTimeline: true,
+    playSpeed: 1000,
+    colors: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
+    animationDuration: 200,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the new play functionality for time-series data visualization. Click the play button to animate through monthly KPI data, or use the timeline slider to manually explore different time periods.',
       },
     },
   },

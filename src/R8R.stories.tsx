@@ -80,8 +80,8 @@ const basicData = [
     values: {
       'Speed': 85,
       'Reliability': 92,
-      'Comfort': 78,
-      'Safety': 95,
+      'Comfort': 65,
+      'Safety': 78,
       'Efficiency': 88
     }
   }
@@ -91,21 +91,21 @@ const comparisonData = [
   {
     label: 'Current',
     values: {
-      'Speed': 75,
-      'Reliability': 85,
-      'Comfort': 90,
+      'Speed': 45,
+      'Reliability': 75,
+      'Comfort': 85,
       'Safety': 60,
-      'Efficiency': 80
+      'Efficiency': 70
     }
   },
   {
     label: 'Target',
     values: {
-      'Speed': 90,
-      'Reliability': 95,
+      'Speed': 80,
+      'Reliability': 90,
       'Comfort': 95,
       'Safety': 85,
-      'Efficiency': 90
+      'Efficiency': 88
     }
   }
 ];
@@ -113,15 +113,15 @@ const comparisonData = [
 const performanceData = [
   {
     label: 'Server A',
-    values: { 'CPU': 85, 'Memory': 92, 'Storage': 78, 'Network': 95, 'Graphics': 88 }
+    values: { 'CPU': 85, 'Memory': 92, 'Storage': 45, 'Network': 95, 'Graphics': 30 }
   },
   {
     label: 'Server B',
-    values: { 'CPU': 75, 'Memory': 85, 'Storage': 90, 'Network': 80, 'Graphics': 95 }
+    values: { 'CPU': 65, 'Memory': 75, 'Storage': 90, 'Network': 60, 'Graphics': 85 }
   },
   {
     label: 'Server C',
-    values: { 'CPU': 95, 'Memory': 70, 'Storage': 85, 'Network': 88, 'Graphics': 75 }
+    values: { 'CPU': 95, 'Memory': 55, 'Storage': 70, 'Network': 80, 'Graphics': 40 }
   }
 ];
 
@@ -142,15 +142,36 @@ const threeDimChart = [
 const threeDimData = [
   {
     label: 'Option A',
-    values: { 'Quality': 90, 'Speed': 70, 'Cost': 85 }
+    values: { 'Quality': 90, 'Speed': 40, 'Cost': 85 }
   },
   {
     label: 'Option B',
-    values: { 'Quality': 75, 'Speed': 95, 'Cost': 60 }
+    values: { 'Quality': 65, 'Speed': 95, 'Cost': 45 }
   },
   {
     label: 'Option C',
-    values: { 'Quality': 85, 'Speed': 80, 'Cost': 90 }
+    values: { 'Quality': 75, 'Speed': 70, 'Cost': 60 }
+  }
+];
+
+const statusData = [
+  {
+    label: 'Active Dataset',
+    values: { 'Speed': 85, 'Reliability': 92, 'Comfort': 65, 'Safety': 78, 'Efficiency': 88 },
+    status: 'active' as const,
+    showNumbers: false
+  },
+  {
+    label: 'Inactive Dataset',
+    values: { 'Speed': 45, 'Reliability': 75, 'Comfort': 85, 'Safety': 60, 'Efficiency': 70 },
+    status: 'inactive' as const,
+    showNumbers: false
+  },
+  {
+    label: 'Hidden Dataset',
+    values: { 'Speed': 95, 'Reliability': 55, 'Comfort': 70, 'Safety': 90, 'Efficiency': 40 },
+    status: 'hidden' as const,
+    showNumbers: false
   }
 ];
 
@@ -267,5 +288,28 @@ export const Minimal: Story = {
     showValues: false,
     showLegend: false,
     animationDuration: 0,
+  },
+};
+
+export const StatusSystem: Story = {
+  args: {
+    data: statusData,
+    chart: basicChart,
+    width: 400,
+    theme: 'light',
+    showGrid: true,
+    showLabels: true,
+    showValues: false,
+    showLegend: true,
+    legendTitle: 'Dataset Status Demo',
+    colors: ['#3b82f6', '#ef4444', '#10b981'],
+    animationDuration: 200,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the new status system with hidden, inactive, and active datasets. Click legend items to toggle between active and inactive. Hover to show/hide number bubbles.',
+      },
+    },
   },
 }; 

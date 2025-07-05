@@ -10,6 +10,8 @@ export interface Dataset {
   label: string;
   values: Record<string, number>;
   color?: string;
+  status?: 'hidden' | 'inactive' | 'active';
+  showNumbers?: boolean;
 }
 
 export interface R8RProps {
@@ -113,7 +115,17 @@ const R8R: React.FC<R8RProps> = ({
   style = {},
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
-  const [visibleDatasets, setVisibleDatasets] = useState<Set<number>>(new Set(data.map((_, index) => index)));
+  const [datasetStates, setDatasetStates] = useState<Map<number, { status: 'hidden' | 'inactive' | 'active'; showNumbers: boolean }>>(() => {
+    // Initialize dataset states based on data
+    const states = new Map();
+    data.forEach((dataset, index) => {
+      states.set(index, {
+        status: dataset.status || 'active',
+        showNumbers: dataset.showNumbers || false
+      });
+    });
+    return states;
+  });
   const [hoveredDataset, setHoveredDataset] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -250,6 +262,19 @@ const R8R: React.FC<R8RProps> = ({
     }
   }, [data, chart]);
 
+  // Update dataset states when data changes
+  useEffect(() => {
+    const newStates = new Map();
+    data.forEach((dataset, index) => {
+      const existingState = datasetStates.get(index);
+      newStates.set(index, {
+        status: dataset.status || existingState?.status || 'active',
+        showNumbers: dataset.showNumbers || existingState?.showNumbers || false
+      });
+    });
+    setDatasetStates(newStates);
+  }, [data]);
+
   // Calculate chart dimensions and positioning
   const chartConfig = useMemo(() => {
     // Use the observed container width directly
@@ -384,29 +409,82 @@ const R8R: React.FC<R8RProps> = ({
     return `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')} Z`;
   };
 
-  // Toggle dataset visibility
+  // Toggle dataset status between active and inactive
   const toggleDataset = (index: number) => {
-    const newVisible = new Set(visibleDatasets);
-    if (newVisible.has(index)) {
-      newVisible.delete(index);
-    } else {
-      newVisible.add(index);
-    }
-    setVisibleDatasets(newVisible);
+    const newStates = new Map(datasetStates);
+    const currentState = newStates.get(index);
+    if (!currentState) return;
+    
+    // Toggle between active and inactive (skip hidden for now)
+    const newStatus = currentState.status === 'active' ? 'inactive' : 'active';
+    newStates.set(index, {
+      status: newStatus,
+      showNumbers: currentState.showNumbers
+    });
+    setDatasetStates(newStates);
   };
 
-  // Get dataset color with opacity based on highlighting
+  // Toggle showNumbers on mouse enter/leave
+  const handleMouseEnter = (index: number) => {
+    setHoveredDataset(index);
+    const newStates = new Map(datasetStates);
+    const currentState = newStates.get(index);
+    if (currentState) {
+      newStates.set(index, {
+        status: currentState.status,
+        showNumbers: true
+      });
+      setDatasetStates(newStates);
+    }
+  };
+
+  const handleMouseLeave = (index: number) => {
+    setHoveredDataset(null);
+    const newStates = new Map(datasetStates);
+    const currentState = newStates.get(index);
+    if (currentState) {
+      newStates.set(index, {
+        status: currentState.status,
+        showNumbers: false
+      });
+      setDatasetStates(newStates);
+    }
+  };
+
+  // Get dataset color based on status and hover state
   const getDatasetColor = (index: number, baseColor: string) => {
-    if (hoveredDataset === null) return baseColor;
-    if (hoveredDataset === index) return baseColor;
+    const datasetState = datasetStates.get(index);
+    if (!datasetState) return baseColor;
     
-    // Convert to grayscale with opacity for non-highlighted datasets
-    const hex = baseColor.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-    return `rgba(${gray}, ${gray}, ${gray}, 0.3)`;
+    // If dataset is inactive, return grayscale version
+    if (datasetState.status === 'inactive') {
+      const opacity = theme === 'dark' ? 0.9 : 0.6; // Higher opacity for dark theme
+      
+      // Handle both hex and rgba colors
+      if (baseColor.startsWith('#')) {
+        // Hex color conversion
+        const hex = baseColor.slice(1); // Remove #
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+        return `rgba(${gray}, ${gray}, ${gray}, ${opacity})`;
+      } else if (baseColor.startsWith('rgba')) {
+        // Extract RGB values from rgba
+        const match = baseColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (match) {
+          const r = parseInt(match[1]);
+          const g = parseInt(match[2]);
+          const b = parseInt(match[3]);
+          const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+          return `rgba(${gray}, ${gray}, ${gray}, ${opacity})`;
+        }
+      }
+      // Fallback to a default gray
+      return `rgba(128, 128, 128, ${opacity})`;
+    }
+    
+    return baseColor;
   };
 
   // Animation effect
@@ -433,6 +511,7 @@ const R8R: React.FC<R8RProps> = ({
         margin: '0',
         overflow: 'hidden',
         boxSizing: 'border-box',
+        fontFamily: 'sans-serif',
         ...style,
       }}
       ref={containerRef}
@@ -476,7 +555,10 @@ const R8R: React.FC<R8RProps> = ({
             gap: chartConfig.shouldStackLegend ? '6px' : '8px',
           }}>
             {allDatasetPoints.map(({ dataset, color, index }) => {
-              const isVisible = visibleDatasets.has(index);
+              const datasetState = datasetStates.get(index);
+              if (!datasetState || datasetState.status === 'hidden') return null;
+              
+              const isActive = datasetState.status === 'active';
               const isHovered = hoveredDataset === index;
               const displayColor = getDatasetColor(index, color);
               const isVerySmallScreen = chartConfig.actualWidth <= 480;
@@ -485,8 +567,8 @@ const R8R: React.FC<R8RProps> = ({
                 <div
                   key={index}
                   onClick={() => toggleDataset(index)}
-                  onMouseEnter={() => setHoveredDataset(index)}
-                  onMouseLeave={() => setHoveredDataset(null)}
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseLeave={() => handleMouseLeave(index)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -494,11 +576,11 @@ const R8R: React.FC<R8RProps> = ({
                     cursor: 'pointer',
                     fontSize: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '12px' : '13px') : '12px',
                     color: currentTheme.textColor,
-                    opacity: isVisible ? 1 : 0.4,
+                    opacity: isActive ? 1 : 0.4,
                     padding: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '3px 6px' : '4px 8px') : '4px 8px',
                     borderRadius: '4px',
-                    backgroundColor: isVisible ? `${color}20` : 'transparent',
-                    border: `1px solid ${isVisible ? color : 'transparent'}`,
+                    backgroundColor: isActive ? `${color}20` : 'transparent',
+                    border: `1px solid ${isActive ? color : 'transparent'}`,
                     transition: 'all 0.2s ease',
                     position: 'relative',
                     flexShrink: 0,
@@ -510,7 +592,7 @@ const R8R: React.FC<R8RProps> = ({
                     height: isVerySmallScreen ? '10px' : (chartConfig.shouldStackLegend ? '12px' : '12px'),
                     backgroundColor: displayColor,
                     borderRadius: '2px',
-                    opacity: isVisible ? 1 : 0.5,
+                    opacity: isActive ? 1 : 0.5,
                     flexShrink: 0,
                   }} />
                   <div style={{ flexShrink: 0 }}>
@@ -560,12 +642,12 @@ const R8R: React.FC<R8RProps> = ({
             />
             {showLabels && (
               <text
-                x={line.x2 + Math.cos(line.angle) * (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15))}
-                y={line.y2 + Math.sin(line.angle) * (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15))}
-                dy={line.y2 > chartConfig.centerY ? (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15)) : (chartConfig.actualWidth <= 480 ? -8 : (chartConfig.shouldStackLegend ? -18 : -15))}
+                x={line.x2 + Math.cos(line.angle) * 15}
+                y={line.y2 + Math.sin(line.angle) * 15}
+                dy={line.y2 > chartConfig.centerY ? 15 : -15}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize={chartConfig.actualWidth <= 480 ? "8" : (chartConfig.shouldStackLegend ? "12" : "12")}
+                fontSize="12"
                 fill={currentTheme.textColor}
                 fontWeight="500"
               >
@@ -573,11 +655,11 @@ const R8R: React.FC<R8RProps> = ({
               </text>
             )}
             <text
-              x={line.x2 + Math.cos(line.angle) * (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15))}
-              y={line.y2 + Math.sin(line.angle) * (chartConfig.actualWidth <= 480 ? 8 : (chartConfig.shouldStackLegend ? 18 : 15))}
+              x={line.x2 + Math.cos(line.angle) * 15}
+              y={line.y2 + Math.sin(line.angle) * 15}
               textAnchor="middle"
               dominantBaseline="middle"
-              fontSize={chartConfig.actualWidth <= 480 ? "9" : (chartConfig.shouldStackLegend ? "21" : "14")}
+              fontSize="14"
               fill={currentTheme.textColor}
               fontWeight="700"
             >
@@ -587,31 +669,89 @@ const R8R: React.FC<R8RProps> = ({
         ))}
 
         {/* Dataset polygons */}
-        {allDatasetPoints.map(({ dataset, points, color, index }) => {
-          if (!visibleDatasets.has(index)) return null;
-          
-          const displayColor = getDatasetColor(index, color);
-          
-          return (
+        {allDatasetPoints
+          .map(({ dataset, points, color, index }) => {
+            const datasetState = datasetStates.get(index);
+            if (!datasetState || datasetState.status === 'hidden') return null;
+            
+            const isActive = datasetState.status === 'active';
+            const showNumbers = datasetState.showNumbers;
+            const displayColor = getDatasetColor(index, color);
+            
+            // For inactive datasets, use grayscale for stroke and nearly transparent fill
+            const strokeColor = isActive ? displayColor : (() => {
+              const opacity = theme === 'dark' ? 0.9 : 0.6; // Higher opacity for dark theme
+              
+              // Handle both hex and rgba colors
+              if (displayColor.startsWith('#')) {
+                // Hex color conversion
+                const hex = displayColor.slice(1); // Remove #
+                const r = parseInt(hex.slice(0, 2), 16);
+                const g = parseInt(hex.slice(2, 4), 16);
+                const b = parseInt(hex.slice(4, 6), 16);
+                const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                return `rgba(${gray}, ${gray}, ${gray}, ${opacity})`;
+              } else if (displayColor.startsWith('rgba')) {
+                // Extract RGB values from rgba
+                const match = displayColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                if (match) {
+                  const r = parseInt(match[1]);
+                  const g = parseInt(match[2]);
+                  const b = parseInt(match[3]);
+                  const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                  return `rgba(${gray}, ${gray}, ${gray}, ${opacity})`;
+                }
+              }
+              // Fallback to a default gray
+              return `rgba(128, 128, 128, ${opacity})`;
+            })();
+            
+            const fillColor = isActive ? displayColor : strokeColor; // Use grayscale for inactive fill
+            
+            return {
+              dataset,
+              points,
+              color,
+              index,
+              datasetState,
+              isActive,
+              showNumbers,
+              displayColor,
+              strokeColor,
+              fillColor
+            };
+          })
+          .filter((item): item is NonNullable<typeof item> => item !== null)
+          .sort((a, b) => {
+            // Sort by: inactive first, then active, then those with numbers on top
+            if (a.isActive !== b.isActive) {
+              return a.isActive ? 1 : -1; // Inactive first
+            }
+            if (a.showNumbers !== b.showNumbers) {
+              return a.showNumbers ? 1 : -1; // Those without numbers first
+            }
+            return 0; // Keep original order for same type
+          })
+          .map(({ dataset, points, color, index, strokeColor, fillColor, isActive, showNumbers }) => (
             <g key={`dataset-${index}`}>
               <path
                 d={createPolygonPath(points)}
-                fill={displayColor}
-                fillOpacity="0.2"
-                stroke={displayColor}
+                fill={fillColor}
+                fillOpacity={isActive ? "0.2" : (theme === 'dark' ? "0.2" : "0.1")}
+                stroke={strokeColor}
                 strokeWidth="2"
-                strokeOpacity="0.8"
+                strokeOpacity={isActive ? "0.8" : "0.6"}
               />
               {/* Data points */}
               {points.map((point, pointIndex) => (
                 <g key={`point-${index}-${pointIndex}`}>
-                  {hoveredDataset === index && (
+                  {showNumbers && (
                     <>
                       <circle
                         cx={point.x}
                         cy={point.y}
-                        r={chartConfig.actualWidth <= 480 ? "12" : (chartConfig.shouldStackLegend ? "16" : "12")}
-                        fill={displayColor}
+                        r={14}
+                        fill={strokeColor}
                         opacity="0.9"
                       />
                       <text
@@ -619,7 +759,7 @@ const R8R: React.FC<R8RProps> = ({
                         y={point.y}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        fontSize={chartConfig.actualWidth <= 480 ? "8" : (chartConfig.shouldStackLegend ? "12" : "10")}
+                        fontSize={12}
                         fill="white"
                         fontWeight="700"
                       >
@@ -630,8 +770,7 @@ const R8R: React.FC<R8RProps> = ({
                 </g>
               ))}
             </g>
-          );
-        })}
+          ))}
       </svg>
     </div>
   );

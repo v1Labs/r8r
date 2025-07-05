@@ -2,6 +2,91 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.6] - 2025-07-05
+
+### 🎯 Enhanced Dataset Status System
+- **New status field**: Added `status` field to Dataset interface with "hidden" | "inactive" | "active" options
+- **Status-based visibility**: Hidden datasets are completely removed from legend and chart
+- **Inactive dataset display**: Inactive datasets show in legend (deselected) and chart (grayscale with lower opacity)
+- **Active dataset display**: Active datasets show in legend (selected) and chart (full color and opacity)
+- **Click to toggle**: Clicking legend items toggles between active and inactive status
+
+### 🔢 Dynamic Number Display
+- **New showNumbers field**: Added `showNumbers` boolean field to Dataset interface (defaults to false)
+- **Hover-based number display**: Hovering over legend items shows/hides value bubbles on the chart
+- **Individual dataset control**: Each dataset can independently control its number visibility
+- **Smooth transitions**: Number bubbles appear/disappear with smooth animations
+
+### 🎨 Visual Improvements
+- **Grayscale inactive datasets**: Inactive datasets display in grayscale with reduced opacity for better visual hierarchy
+- **Enhanced legend styling**: Legend items reflect active/inactive states with appropriate visual feedback
+- **Improved color management**: Better color handling for different dataset states
+- **Consistent visual states**: All visual elements properly reflect the new status system
+- **Refined inactive styling**: Inactive datasets show grayscale stroke with nearly transparent fill
+- **Grayscale value bubbles**: Value bubbles on inactive datasets match the grayscale stroke color
+- **Theme-aware opacity**: Stroke opacity 0.6 (light) / 0.9 (dark), fill opacity 0.1 (light) / 0.2 (dark)
+- **Smart z-index layering**: Inactive datasets render first, active datasets second, datasets with numbers on top
+
+### 🔧 Technical Enhancements
+- **State management refactor**: Replaced visibleDatasets Set with comprehensive datasetStates Map
+- **Status persistence**: Dataset states persist across data updates while respecting new status values
+- **Enhanced interaction handlers**: New mouse enter/leave handlers for showNumbers functionality
+- **Improved type safety**: Better TypeScript support with new interface fields
+- **SVG DOM ordering**: Clean z-index implementation using natural SVG element stacking
+
+### 📝 Typography Improvements
+- **Sans-serif font family**: Consistent sans-serif typography throughout the chart
+- **Standardized font sizes**: 12px for labels, 14px for max values across all screen sizes
+- **Consistent positioning**: 15px offsets prevent text clustering on mobile devices
+- **Enhanced value bubbles**: 14px radius circles with 12px font for better readability
+- **Cross-device consistency**: Same typography experience on mobile and desktop
+
+### 📊 Enhanced Test Data
+- **Realistic data ranges**: Values now span 30-95 instead of clustering in 75-95 range
+- **More interesting shapes**: Radar charts have distinctive, asymmetrical profiles
+- **Better storytelling**: Data reflects realistic trade-offs and use cases
+- **Clearer comparisons**: Differences between datasets are more apparent
+
+### 🎯 API Changes
+```typescript
+interface Dataset {
+  label: string;
+  values: Record<string, number>;
+  color?: string;
+  status?: 'hidden' | 'inactive' | 'active';  // New field
+  showNumbers?: boolean;                      // New field
+}
+
+// Example usage with new fields
+const data = [
+  {
+    label: 'Active Dataset',
+    values: { 'Speed': 85, 'Reliability': 92 },
+    status: 'active',
+    showNumbers: false
+  },
+  {
+    label: 'Inactive Dataset', 
+    values: { 'Speed': 75, 'Reliability': 85 },
+    status: 'inactive',
+    showNumbers: false
+  },
+  {
+    label: 'Hidden Dataset',
+    values: { 'Speed': 95, 'Reliability': 88 },
+    status: 'hidden',
+    showNumbers: false
+  }
+];
+```
+
+### ✨ New Features
+- **Three-state dataset system**: Hidden, inactive, and active states for fine-grained control
+- **Hover-based number display**: Interactive value bubble display on legend hover
+- **Enhanced visual hierarchy**: Clear distinction between active and inactive datasets
+- **Improved user interaction**: Click to toggle status, hover to show numbers
+- **Better data organization**: More flexible dataset management and display options
+
 ## [1.0.5] - 2025-07-04
 
 ### 📱 Responsive Design & Mobile Optimization

@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react-webpack5'
+import v1labsTheme from './v1labsTheme'
 import React from 'react'
 
 const preview: Preview = {
@@ -7,6 +8,24 @@ const preview: Preview = {
       matchers: {
        color: /(background|color)$/i,
        date: /Date$/i,
+      },
+    },
+    docs: {
+      theme: v1labsTheme,
+    },
+    backgrounds: {
+      default: 'light',
+    },
+    toolbar: {
+      'storybook/background': { hidden: true },
+      'storybook/viewport': { hidden: true },
+      'storybook/measure': { hidden: true },
+      'storybook/outline': { hidden: true },
+      'storybook/grid': { hidden: true },
+      'storybook/zoom': { hidden: true },
+      'storybook/controls': { 
+        hidden: false,
+        position: 'right'
       },
     },
   },

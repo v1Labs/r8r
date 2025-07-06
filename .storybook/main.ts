@@ -12,7 +12,13 @@ const config: StorybookConfig = {
   "framework": {
     "name": "@storybook/react-webpack5",
     "options": {}
-  }
+  },
+  managerHead: (head) => `
+    ${head}
+    <style>
+      .css-32o4gv { max-height: 40px !important; }
+    </style>
+  `
 };
 
 export default config;

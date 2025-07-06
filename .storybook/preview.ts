@@ -28,6 +28,7 @@ const preview: Preview = {
         position: 'right'
       },
     },
+    theme: v1labsTheme,
   },
   decorators: [
     (Story) => {

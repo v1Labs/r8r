@@ -1,6 +1,5 @@
-import { addons } from 'storybook/manager-api';
 import v1labsTheme from './v1labsTheme';
 
-addons.setConfig({
+export const parameters = {
   theme: v1labsTheme,
-}); 
+}; 

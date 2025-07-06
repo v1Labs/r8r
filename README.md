@@ -70,7 +70,7 @@ function App() {
 
 ## Live Demo
 
-For interactive examples and demos, visit the [R8R demo page on v1Labs](https://v1labs.com/r8r).
+For interactive examples and demos, visit the [R8R Storybook demo](https://r8r.v1labs.com/).
 
 ## Development
 

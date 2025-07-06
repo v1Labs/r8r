@@ -2,6 +2,22 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.8] - 2025-07-06
+
+### 🚀 Vercel Deployment Setup
+- **Vercel configuration**: Added `vercel.json` for seamless Storybook deployment to Vercel
+- **Build optimization**: Configured build commands and output directory for Vercel compatibility
+- **Demo site**: Storybook now deployed at [https://r8r.v1labs.com/](https://r8r.v1labs.com/)
+- **Local testing**: Added `serve-storybook` script for testing built Storybook locally
+- **Zero-config deployment**: Automatic deployment on git push with Vercel integration
+- **Static site generation**: Storybook builds as static site for optimal performance
+
+### 🔧 Technical Improvements
+- **Vercel framework detection**: Set framework to null for standalone Storybook deployment
+- **Build command specification**: Explicit build and dev commands for Vercel
+- **Output directory configuration**: Points to `./storybook-static` for Vercel serving
+- **Development workflow**: Maintained existing Storybook development experience
+
 ## [1.0.7] - 2025-07-05
 
 ### 🎬 Interactive Play Functionality

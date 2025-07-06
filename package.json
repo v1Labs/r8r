@@ -14,7 +14,9 @@
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "serve-storybook": "npx serve storybook-static",
+    "chromatic": "npx chromatic --project-token=chpt_df1d0b6fc7d89e4"
   },
   "keywords": [
     "react",
@@ -41,6 +43,7 @@
     "@storybook/react-webpack5": "^9.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "chromatic": "^13.1.2",
     "rollup": "^2.75.0",
     "rollup-plugin-dts": "^4.2.2",
     "rollup-plugin-peer-deps-external": "^2.2.4",

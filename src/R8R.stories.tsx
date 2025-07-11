@@ -71,6 +71,10 @@ const meta: Meta<typeof R8R> = {
       control: { type: 'range', min: 500, max: 3000, step: 100 },
       description: 'Speed of play animation in milliseconds',
     },
+    showSparkLayout: {
+      control: { type: 'boolean' },
+      description: 'Whether to show mini radar charts in a grid layout instead of overlaying them',
+    },
   },
 };
 
@@ -407,6 +411,103 @@ export const PlayFunctionality: Story = {
     docs: {
       description: {
         story: 'Demonstrates the new play functionality for time-series data visualization. Click the play button to animate through monthly KPI data, or use the timeline slider to manually explore different time periods.',
+      },
+    },
+  },
+};
+
+// Spark layout data
+const sparkData = [
+  {
+    label: 'Product A',
+    values: { 'Quality': 85, 'Speed': 70, 'Cost': 90, 'Support': 75, 'Features': 80 }
+  },
+  {
+    label: 'Product B',
+    values: { 'Quality': 75, 'Speed': 95, 'Cost': 60, 'Support': 85, 'Features': 90 }
+  },
+  {
+    label: 'Product C',
+    values: { 'Quality': 90, 'Speed': 65, 'Cost': 85, 'Support': 90, 'Features': 70 }
+  },
+  {
+    label: 'Product D',
+    values: { 'Quality': 80, 'Speed': 85, 'Cost': 75, 'Support': 80, 'Features': 85 }
+  },
+  {
+    label: 'Product E',
+    values: { 'Quality': 70, 'Speed': 90, 'Cost': 80, 'Support': 70, 'Features': 95 }
+  },
+  {
+    label: 'Product F',
+    values: { 'Quality': 95, 'Speed': 75, 'Cost': 70, 'Support': 95, 'Features': 75 }
+  },
+  {
+    label: 'Product G',
+    values: { 'Quality': 85, 'Speed': 80, 'Cost': 85, 'Support': 85, 'Features': 80 }
+  },
+  {
+    label: 'Product H',
+    values: { 'Quality': 75, 'Speed': 85, 'Cost': 90, 'Support': 75, 'Features': 85 }
+  },
+  {
+    label: 'Product I',
+    values: { 'Quality': 90, 'Speed': 70, 'Cost': 80, 'Support': 90, 'Features': 90 }
+  }
+];
+
+const sparkChart = [
+  { label: 'Quality', value: 0, maxValue: 100 },
+  { label: 'Speed', value: 0, maxValue: 100 },
+  { label: 'Cost', value: 0, maxValue: 100 },
+  { label: 'Support', value: 0, maxValue: 100 },
+  { label: 'Features', value: 0, maxValue: 100 }
+];
+
+export const SparkLayout: Story = {
+  args: {
+    data: sparkData,
+    chart: sparkChart,
+    width: 600,
+    theme: 'light',
+    showGrid: true,
+    showLabels: false,
+    showValues: false,
+    showLegend: false,
+    showSparkLayout: true,
+    colors: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899'],
+    animationDuration: 200,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the new spark layout feature. Instead of overlaying multiple datasets on a single chart, this layout displays each dataset as its own mini radar chart in a grid. Perfect for comparing multiple datasets at a glance. Hover over charts to see tooltips with values.',
+      },
+    },
+  },
+};
+
+// 2x2 grid example with exactly 4 datasets
+const fourSparkData = sparkData.slice(0, 4);
+
+export const SparkLayout2x2: Story = {
+  args: {
+    data: fourSparkData,
+    chart: sparkChart,
+    width: 500,
+    theme: 'light',
+    showGrid: true,
+    showLabels: false,
+    showValues: false,
+    showLegend: false,
+    showSparkLayout: true,
+    colors: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'],
+    animationDuration: 200,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the 2x2 grid layout that appears when there are exactly 4 datasets. Each spark chart shows its label above the chart.',
       },
     },
   },

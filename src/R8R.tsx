@@ -55,6 +55,8 @@ export interface R8RProps {
   showTimeline?: boolean;
   /** Speed of play animation in milliseconds (default: 1000) */
   playSpeed?: number;
+  /** Whether to show mini radar charts in a grid layout instead of overlaying them */
+  showSparkLayout?: boolean;
   /** Custom CSS class name */
   className?: string;
   /** Custom CSS styles */
@@ -120,6 +122,7 @@ const R8R: React.FC<R8RProps> = ({
   showPlayButton = false,
   showTimeline = false,
   playSpeed = 1000,
+  showSparkLayout = false,
   className = '',
   style = {},
 }) => {
@@ -140,6 +143,7 @@ const R8R: React.FC<R8RProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [tooltipData, setTooltipData] = useState<{ content: string; x: number; y: number } | null>(null);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -318,9 +322,69 @@ const R8R: React.FC<R8RProps> = ({
     };
   }, [width, chart, showLegend, containerWidth]);
 
+  // Calculate spark layout dimensions
+  const sparkConfig = useMemo(() => {
+    if (!showSparkLayout) return null;
+    
+    const availableWidth = containerWidth || window.innerWidth;
+    const actualWidth = availableWidth >= width ? width : availableWidth;
+    
+    // Calculate grid dimensions - use 2x2 for exactly 4 datasets, otherwise 3x3
+    const chartsToShow = Math.min(data.length, 9);
+    const gridSize = chartsToShow === 4 ? 2 : 3;
+    const maxCharts = gridSize * gridSize;
+    
+    // Calculate individual spark chart size
+    const padding = 8;
+    const gap = 18;
+    const availableChartWidth = actualWidth - (padding * 2) - (gap * (gridSize - 1));
+    const sparkSize = (availableChartWidth / gridSize) * 0.95; // Slightly smaller SVG boxes
+    
+    // Calculate grid layout
+    const rows = Math.ceil(chartsToShow / gridSize);
+    const totalHeight = (sparkSize * rows) + (gap * (rows - 1)) + (padding * 2);
+    
+    return {
+      gridSize,
+      maxCharts,
+      chartsToShow,
+      sparkSize,
+      padding,
+      gap,
+      rows,
+      totalHeight,
+      actualWidth,
+    };
+  }, [showSparkLayout, data.length, width, containerWidth]);
+
   // Calculate polygon points for a dataset
   const calculatePoints = (dataset: Dataset, color: string) => {
     const { centerX, centerY, radius, maxValue } = chartConfig;
+    const angleStep = (2 * Math.PI) / chart.length;
+
+    return chart.map((point, index) => {
+      const angle = index * angleStep - Math.PI / 2; // Start from top
+      const value = dataset.values[point.label] || 0;
+      const normalizedValue = value / (point.maxValue || maxValue);
+      const pointRadius = radius * normalizedValue;
+      
+      return {
+        x: centerX + pointRadius * Math.cos(angle),
+        y: centerY + pointRadius * Math.sin(angle),
+        label: point.label,
+        value,
+        maxValue: point.maxValue || maxValue,
+        angle,
+      };
+    });
+  };
+
+  // Calculate polygon points for a spark chart
+  const calculateSparkPoints = (dataset: Dataset, color: string, sparkSize: number) => {
+    const centerX = sparkSize / 2;
+    const centerY = sparkSize / 2;
+    const radius = Math.min(centerX, centerY) * 0.85; // Slightly reduced to prevent cutoff
+    const maxValue = Math.max(...chart.map(d => d.maxValue || 100));
     const angleStep = (2 * Math.PI) / chart.length;
 
     return chart.map((point, index) => {
@@ -394,10 +458,165 @@ const R8R: React.FC<R8RProps> = ({
     return lines;
   }, [chart, chartConfig]);
 
+  // Generate spark chart elements
+  const generateSparkChartElements = (sparkSize: number) => {
+    const centerX = sparkSize / 2;
+    const centerY = sparkSize / 2;
+    const radius = Math.min(centerX, centerY) * 0.85; // Match the radius used in calculateSparkPoints
+    const angleStep = (2 * Math.PI) / chart.length;
+    
+    // Generate grid circles for spark chart
+    const gridCircles = [];
+    const levels = 3; // Fewer levels for spark charts
+    
+    for (let i = 1; i <= levels; i++) {
+      const circleRadius = (radius * i) / levels;
+      gridCircles.push({
+        cx: centerX,
+        cy: centerY,
+        r: circleRadius,
+      });
+    }
+    
+    // Generate axis lines for spark chart
+    const axisLines = [];
+    for (let i = 0; i < chart.length; i++) {
+      const angle = i * angleStep - Math.PI / 2;
+      const endX = centerX + radius * Math.cos(angle);
+      const endY = centerY + radius * Math.sin(angle);
+      
+      axisLines.push({
+        x1: centerX,
+        y1: centerY,
+        x2: endX,
+        y2: endY,
+        label: chart[i].label,
+        angle,
+      });
+    }
+    
+    return { gridCircles, axisLines };
+  };
+
   // Create polygon path
   const createPolygonPath = (points: Array<{ x: number; y: number }>) => {
     if (points.length === 0) return '';
     return `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')} Z`;
+  };
+
+  // Render individual spark chart
+  const renderSparkChart = (dataset: Dataset, index: number, sparkSize: number) => {
+    const color = dataset.color || colors[index % colors.length];
+    const points = calculateSparkPoints(dataset, color, sparkSize);
+    const { gridCircles, axisLines } = generateSparkChartElements(sparkSize);
+    
+    // Create tooltip content with formatted labels and values
+    const tooltipContent = Object.entries(dataset.values)
+      .map(([label, value]) => `**${label}**: ${value}`)
+      .join('\n');
+    
+    const handleMouseEnter = (e: React.MouseEvent) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // Calculate optimal position - anchor below the chart
+      let x = rect.left + rect.width / 2;
+      let y = rect.bottom - 5; // Position closer to the chart
+      
+      // Ensure tooltip doesn't go off-screen
+      if (x < 100) x = 100;
+      if (x > viewportWidth - 100) x = viewportWidth - 100;
+      if (y > viewportHeight - 100) y = rect.top - 15; // Show above if not enough space below
+      
+      setTooltipData({
+        content: tooltipContent,
+        x,
+        y
+      });
+    };
+    
+    const handleMouseLeave = () => {
+      setTooltipData(null);
+    };
+    
+    return (
+      <div
+        key={index}
+        style={{
+          width: sparkSize,
+          height: sparkSize,
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Dataset label */}
+        <div style={{
+          fontSize: '10px',
+          fontWeight: '600',
+          color: currentTheme.textColor,
+          marginBottom: '-8px',
+          textAlign: 'center',
+          maxWidth: sparkSize - 8,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
+          {dataset.label}
+        </div>
+        
+        {/* Spark chart SVG */}
+        <svg
+          width={sparkSize}
+          height={sparkSize}
+          style={{
+            display: 'block',
+          }}
+        >
+          {/* Grid circles */}
+          {gridCircles.map((circle, circleIndex) => (
+            <circle
+              key={`spark-grid-${index}-${circleIndex}`}
+              cx={circle.cx}
+              cy={circle.cy}
+              r={circle.r}
+              fill="none"
+              stroke={currentTheme.gridColor}
+              strokeWidth="1"
+              opacity="0.6"
+            />
+          ))}
+
+          {/* Axis lines */}
+          {axisLines.map((line, lineIndex) => (
+            <line
+              key={`spark-axis-${index}-${lineIndex}`}
+              x1={line.x1}
+              y1={line.y1}
+              x2={line.x2}
+              y2={line.y2}
+              stroke={currentTheme.gridColor}
+              strokeWidth="1"
+              opacity="0.6"
+            />
+          ))}
+
+          {/* Dataset polygon */}
+          <path
+            d={createPolygonPath(points)}
+            fill={color}
+            fillOpacity="0.3"
+            stroke={color}
+            strokeWidth="1.5"
+            strokeOpacity="0.9"
+          />
+        </svg>
+      </div>
+    );
   };
 
   // Toggle dataset status between active and inactive
@@ -625,8 +844,10 @@ const R8R: React.FC<R8RProps> = ({
     <div
       className={`r8r-chart ${className}`}
       style={{
-        width: chartConfig.actualWidth,
-        height: chartConfig.totalHeight + (showPlayButton || showTimeline ? 80 : 0),
+        width: showSparkLayout ? sparkConfig?.actualWidth || chartConfig.actualWidth : chartConfig.actualWidth,
+        height: showSparkLayout 
+          ? (sparkConfig?.totalHeight || 0) + (showPlayButton || showTimeline ? 80 : 0)
+          : chartConfig.totalHeight + (showPlayButton || showTimeline ? 80 : 0),
         backgroundColor: currentTheme.backgroundColor,
         borderRadius: '8px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
@@ -701,111 +922,134 @@ const R8R: React.FC<R8RProps> = ({
         `}
       </style>
       {/* Chart and Legend Container */}
-      <div style={{
-        display: 'flex',
-        flexDirection: chartConfig.shouldStackLegend ? 'column' : 'row',
-        flex: 1,
-      }}>
-        {/* Legend */}
-        {showLegend && (
-          <div
+      {showSparkLayout ? (
+        // Spark Layout - Grid of mini radar charts
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          padding: `${sparkConfig?.padding}px`,
+        }}>
+          {/* Spark Grid */}
+          <div style={{
+            display: 'grid',
+            padding: '10px',
+            gridTemplateColumns: `repeat(${sparkConfig?.gridSize}, 1fr)`,
+            gap: `${sparkConfig?.gap}px`,
+            width: 'calc(100% - 20px)',
+          }}>
+            {data.slice(0, sparkConfig?.chartsToShow || 0).map((dataset, index) => 
+              renderSparkChart(dataset, index, sparkConfig?.sparkSize || 100)
+            )}
+          </div>
+        </div>
+      ) : (
+        // Regular Layout - Single chart with legend
+        <div style={{
+          display: 'flex',
+          flexDirection: chartConfig.shouldStackLegend ? 'column' : 'row',
+          flex: 1,
+        }}>
+          {/* Legend */}
+          {showLegend && (
+            <div
+              style={{
+                width: chartConfig.shouldStackLegend ? 'auto' : chartConfig.legendWidth,
+                height: chartConfig.shouldStackLegend ? chartConfig.legendHeight : 'auto',
+                padding: chartConfig.shouldStackLegend ? '8px' : '16px',
+                borderRight: chartConfig.shouldStackLegend ? 'none' : `1px solid ${currentTheme.legendBorderColor}`,
+                borderBottom: chartConfig.shouldStackLegend ? `1px solid ${currentTheme.legendBorderColor}` : 'none',
+                backgroundColor: currentTheme.legendBackgroundColor,
+                display: 'flex',
+                flexDirection: 'column',
+                flexWrap: 'nowrap',
+                justifyContent: chartConfig.shouldStackLegend ? 'center' : 'center',
+                alignItems: 'stretch',
+                gap: '8px',
+              }}
+            >
+              {legendTitle && (
+                <h3 style={{ 
+                  margin: '0 0 8px 0', 
+                  fontSize: chartConfig.shouldStackLegend ? '14px' : '14px', 
+                  fontWeight: '600',
+                  color: currentTheme.textColor,
+                  flexShrink: 0,
+                  textAlign: chartConfig.shouldStackLegend ? 'center' : 'left',
+                }}>
+                  {legendTitle}
+                </h3>
+              )}
+              <div style={{
+                display: 'flex',
+                flexDirection: chartConfig.shouldStackLegend ? 'row' : 'column',
+                flexWrap: chartConfig.shouldStackLegend ? 'wrap' : 'nowrap',
+                justifyContent: chartConfig.shouldStackLegend ? 'center' : 'flex-start',
+                alignItems: chartConfig.shouldStackLegend ? 'center' : 'stretch',
+                gap: chartConfig.shouldStackLegend ? '6px' : '8px',
+              }}>
+                {allDatasetPoints.map(({ dataset, color, index }) => {
+                  const datasetState = datasetStates.get(index);
+                  if (!datasetState || datasetState.status === 'hidden') return null;
+                  
+                  const isActive = datasetState.status === 'active';
+                  const isHovered = hoveredDataset === index;
+                  const displayColor = getDatasetColor(index, color);
+                  const isVerySmallScreen = chartConfig.actualWidth <= 480;
+                  
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => toggleDataset(index)}
+                      onMouseEnter={() => handleMouseEnter(index)}
+                      onMouseLeave={() => handleMouseLeave(index)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: isVerySmallScreen ? '4px' : '6px',
+                        cursor: 'pointer',
+                        fontSize: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '12px' : '13px') : '12px',
+                        color: currentTheme.textColor,
+                        opacity: isActive ? 1 : 0.4,
+                        padding: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '3px 6px' : '4px 8px') : '4px 8px',
+                        borderRadius: '4px',
+                        backgroundColor: isActive ? `${color}20` : 'transparent',
+                        border: `1px solid ${isActive ? color : 'transparent'}`,
+                        transition: 'all 0.2s ease',
+                        position: 'relative',
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <div style={{
+                        width: isVerySmallScreen ? '10px' : (chartConfig.shouldStackLegend ? '12px' : '12px'),
+                        height: isVerySmallScreen ? '10px' : (chartConfig.shouldStackLegend ? '12px' : '12px'),
+                        backgroundColor: displayColor,
+                        borderRadius: '2px',
+                        opacity: isActive ? 1 : 0.5,
+                        flexShrink: 0,
+                      }} />
+                      <div style={{ flexShrink: 0 }}>
+                        {dataset.label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Chart */}
+          <svg
+            width={chartConfig.chartWidth}
+            height={chartConfig.chartHeight}
             style={{
-              width: chartConfig.shouldStackLegend ? 'auto' : chartConfig.legendWidth,
-              height: chartConfig.shouldStackLegend ? chartConfig.legendHeight : 'auto',
-              padding: chartConfig.shouldStackLegend ? '8px' : '16px',
-              borderRight: chartConfig.shouldStackLegend ? 'none' : `1px solid ${currentTheme.legendBorderColor}`,
-              borderBottom: chartConfig.shouldStackLegend ? `1px solid ${currentTheme.legendBorderColor}` : 'none',
-              backgroundColor: currentTheme.legendBackgroundColor,
-              display: 'flex',
-              flexDirection: 'column',
-              flexWrap: 'nowrap',
-              justifyContent: chartConfig.shouldStackLegend ? 'center' : 'center',
-              alignItems: 'stretch',
-              gap: '8px',
+              display: 'block',
+              transition: `all ${animationDuration}ms ease-in-out`,
+              opacity: isAnimating ? 0.8 : 1,
+              marginTop: !chartConfig.shouldStackLegend ? '10px' : '0',
             }}
           >
-            {legendTitle && (
-              <h3 style={{ 
-                margin: '0 0 8px 0', 
-                fontSize: chartConfig.shouldStackLegend ? '14px' : '14px', 
-                fontWeight: '600',
-                color: currentTheme.textColor,
-                flexShrink: 0,
-                textAlign: chartConfig.shouldStackLegend ? 'center' : 'left',
-              }}>
-                {legendTitle}
-              </h3>
-            )}
-            <div style={{
-              display: 'flex',
-              flexDirection: chartConfig.shouldStackLegend ? 'row' : 'column',
-              flexWrap: chartConfig.shouldStackLegend ? 'wrap' : 'nowrap',
-              justifyContent: chartConfig.shouldStackLegend ? 'center' : 'flex-start',
-              alignItems: chartConfig.shouldStackLegend ? 'center' : 'stretch',
-              gap: chartConfig.shouldStackLegend ? '6px' : '8px',
-            }}>
-              {allDatasetPoints.map(({ dataset, color, index }) => {
-                const datasetState = datasetStates.get(index);
-                if (!datasetState || datasetState.status === 'hidden') return null;
-                
-                const isActive = datasetState.status === 'active';
-                const isHovered = hoveredDataset === index;
-                const displayColor = getDatasetColor(index, color);
-                const isVerySmallScreen = chartConfig.actualWidth <= 480;
-                
-                return (
-                  <div
-                    key={index}
-                    onClick={() => toggleDataset(index)}
-                    onMouseEnter={() => handleMouseEnter(index)}
-                    onMouseLeave={() => handleMouseLeave(index)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: isVerySmallScreen ? '4px' : '6px',
-                      cursor: 'pointer',
-                      fontSize: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '12px' : '13px') : '12px',
-                      color: currentTheme.textColor,
-                      opacity: isActive ? 1 : 0.4,
-                      padding: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '3px 6px' : '4px 8px') : '4px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: isActive ? `${color}20` : 'transparent',
-                      border: `1px solid ${isActive ? color : 'transparent'}`,
-                      transition: 'all 0.2s ease',
-                      position: 'relative',
-                      flexShrink: 0,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <div style={{
-                      width: isVerySmallScreen ? '10px' : (chartConfig.shouldStackLegend ? '12px' : '12px'),
-                      height: isVerySmallScreen ? '10px' : (chartConfig.shouldStackLegend ? '12px' : '12px'),
-                      backgroundColor: displayColor,
-                      borderRadius: '2px',
-                      opacity: isActive ? 1 : 0.5,
-                      flexShrink: 0,
-                    }} />
-                    <div style={{ flexShrink: 0 }}>
-                      {dataset.label}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Chart */}
-        <svg
-          width={chartConfig.chartWidth}
-          height={chartConfig.chartHeight}
-          style={{
-            display: 'block',
-            transition: `all ${animationDuration}ms ease-in-out`,
-            opacity: isAnimating ? 0.8 : 1,
-            marginTop: !chartConfig.shouldStackLegend ? '10px' : '0',
-          }}
-        >
           {/* Grid circles */}
           {gridCircles.map((circle, index) => (
             <circle
@@ -963,8 +1207,7 @@ const R8R: React.FC<R8RProps> = ({
             ))}
         </svg>
       </div>
-
-      {/* Play Controls */}
+      )}
       {(showPlayButton || showTimeline) && (
         <div style={{
           display: 'flex',
@@ -1070,6 +1313,60 @@ const R8R: React.FC<R8RProps> = ({
               </div>
             </div>
           )}
+        </div>
+      )}
+      
+      {/* Custom Tooltip */}
+      {tooltipData && (
+        <div
+          style={{
+            position: 'fixed',
+            left: tooltipData.x,
+            top: tooltipData.y,
+            transform: 'translateX(-50%)',
+            backgroundColor: currentTheme.textColor,
+            color: currentTheme.backgroundColor,
+            padding: '12px 16px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: '500',
+            whiteSpace: 'pre-line',
+            pointerEvents: 'none',
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            maxWidth: '200px',
+            wordWrap: 'break-word',
+          }}
+        >
+          {tooltipData.content.split('\n').map((line, index) => {
+            const parts = line.split('**: ');
+            if (parts.length === 2) {
+              const label = parts[0].replace('**', '');
+              const value = parts[1];
+              return (
+                <div key={index} style={{ marginBottom: index < tooltipData.content.split('\n').length - 1 ? '4px' : '0' }}>
+                  <span style={{ fontWeight: '700' }}>{label}</span>
+                  <span style={{ fontWeight: '400' }}>: {value}</span>
+                </div>
+              );
+            }
+            return <div key={index}>{line}</div>;
+          })}
+          {/* Tooltip arrow */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '-6px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderBottom: `6px solid ${currentTheme.textColor}`,
+            }}
+          />
         </div>
       )}
     </div>

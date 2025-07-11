@@ -2,6 +2,64 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.9] - 2025-07-11
+
+### 🎯 Spark Layout Feature
+- **New layout option**: Added `showSparkLayout` prop (defaults to false) for displaying mini radar charts in a grid
+- **Smart grid sizing**: Uses 2x2 grid for exactly 4 datasets, 3x3 grid for other cases (up to 9 charts)
+- **Individual chart display**: Each dataset gets its own mini radar chart with simplified styling
+- **Compact visualization**: Perfect for comparing multiple datasets at a glance
+- **Responsive design**: Grid automatically adapts to container width with proper spacing
+- **Clean labeling**: Each spark chart displays its dataset label above the chart for clear identification
+- **Enhanced grid lines**: More prominent grid lines and axis lines for better visibility
+- **Interactive tooltips**: Hover over spark charts to see dataset labels and values
+- **Theme integration**: Spark charts use the same theme colors as the main chart
+- **Optimized spacing**: 4px gaps between charts with 8px padding for maximum chart size
+- **Tight labeling**: Labels positioned very close to charts for immediate association
+
+### 🎨 Visual Design
+- **Mini chart styling**: Spark charts use smaller radius (60% of available space) for better proportions
+- **Enhanced visibility**: More prominent grid lines (strokeWidth: 1, opacity: 0.6) and axis lines for better readability
+- **Direct labeling**: Dataset labels positioned above each spark chart for immediate identification
+- **Enhanced tooltips**: Custom tooltips with bold labels and regular values for better readability
+- **Consistent theming**: Spark charts inherit all theme colors and styling from the main component
+- **Responsive sizing**: Chart size automatically calculated based on container width and grid constraints
+- **2x2 grid optimization**: Special handling for exactly 4 datasets with optimal 2x2 layout
+
+### 🔧 Technical Implementation
+- **Conditional rendering**: Component switches between spark layout and regular layout based on prop
+- **Smart grid sizing**: Dynamic grid size calculation (2x2 for 4 datasets, 3x3 for others)
+- **Simplified layout**: Clean grid layout without legend for better data association
+- **Spark chart generation**: Dedicated functions for calculating spark chart points and elements
+- **Custom tooltip system**: Dependency-free tooltip implementation with smart positioning and edge detection
+- **Performance optimization**: Spark layout uses simplified calculations and rendering for better performance
+- **Backward compatibility**: Existing functionality preserved when `showSparkLayout` is false
+
+### 🎯 API Changes
+```typescript
+interface R8RProps {
+  // ... existing props ...
+  showSparkLayout?: boolean;  // New: Show mini radar charts in grid layout
+}
+
+// Example usage with spark layout
+<R8R 
+  data={multipleDatasets}
+  chart={chartStructure}
+  showSparkLayout={true}
+  width={600}
+  legendTitle="Dataset Comparison"
+/>
+```
+
+### ✨ New Features
+- **Grid visualization**: Display multiple datasets as individual mini charts
+- **Quick comparison**: Easily compare multiple datasets at a glance
+- **Space efficient**: Compact layout for showing many datasets simultaneously
+- **Simplified charts**: Clean, minimal radar charts for quick data scanning
+- **Responsive grid**: Automatically adapts to different screen sizes
+- **Theme consistency**: Maintains visual consistency with existing themes
+
 ## [1.0.8] - 2025-07-06
 
 ### 🚀 Vercel Deployment Setup

@@ -2,6 +2,59 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.10] - 2025-07-11
+
+### 🎨 Design Cleanup
+- **Removed max value labels**: Eliminated the repetitive max value labels (typically "100") from the chart axes to create a cleaner, more focused design
+- **Improved visual hierarchy**: Chart now emphasizes the data shapes and axis labels without visual clutter from redundant max values
+- **Enhanced readability**: Cleaner design allows users to focus on the actual data patterns and comparisons
+- **Future-ready**: Design now prepared for progressive disclosure of max value information through alternative UI patterns
+- **Simplified label positioning**: Removed unnecessary vertical offsets from axis labels since max value labels are no longer present
+- **Removed deprecated showValues prop**: Eliminated the unused `showValues` prop from the component interface and all story configurations
+
+### 🚀 Core Functionality Focus
+- **Removed play functionality**: Eliminated the experimental play button and timeline slider features to focus on core radar chart functionality
+- **Simplified component API**: Removed `showPlayButton`, `showTimeline`, and `playSpeed` props from the component interface
+- **Cleaner codebase**: Eliminated complex play sequence logic, state management, and UI controls
+- **Reduced bundle size**: Removed unused play-related code and dependencies
+- **Streamlined stories**: Updated Storybook stories to remove play functionality demonstrations
+
+### 🎯 Simplified Value Display
+- **Removed value bubbles**: Eliminated the distracting value bubbles that appeared when datasets were highlighted
+- **Cleaner visual design**: Chart now focuses on data shapes and patterns without visual clutter from value overlays
+- **Simplified state management**: Removed `showNumbers` field from Dataset interface and related state logic
+- **Streamlined interactions**: Simplified mouse enter/leave handlers to focus on core functionality
+- **Future-ready**: Design now prepared for implementing alternative value display methods
+
+### 🎯 Core Functionality Focus
+- **Removed spark layout**: Eliminated the `showSparkLayout` prop and grid layout functionality to focus on main radar chart use case
+- **Simplified component API**: Removed spark chart rendering, grid calculations, and mini chart logic
+- **Cleaner codebase**: Eliminated complex spark layout calculations and dedicated spark chart functions
+- **Reduced bundle size**: Removed unused spark layout code and dependencies
+- **Streamlined stories**: Updated Storybook stories to remove spark layout demonstrations
+
+### 🎨 Enhanced Data Highlighting
+- **Three-state system**: Implemented active, inactive, and highlighted states for datasets
+- **Dual highlighting methods**: Hover (desktop) and long press (mobile) both highlight datasets
+- **Cross-platform compatibility**: Works seamlessly on both desktop (mouse) and mobile (touch) devices
+- **Chart polygon interaction**: Hover over chart polygons to highlight associated datasets
+- **Smart highlighting**: Only active datasets can be highlighted, with 100% fill opacity
+- **Exclusive highlighting**: Only one dataset can be highlighted at a time
+- **Dynamic fill opacity**: Non-highlighted datasets have 0% fill opacity when any dataset is highlighted
+- **Improved visual hierarchy**: Clear distinction between active, inactive, and highlighted states
+- **Color consistency**: Highlighted datasets maintain their original colors (not grayscale)
+- **Enhanced legend styling**: Highlighted datasets have stronger background color (40% vs 20%) with consistent 1px borders to prevent layout shifts
+- **Layered rendering**: Highlighted datasets appear above other datasets for better visibility
+- **Optimal opacity**: Highlighted datasets use 75% opacity for balanced visibility without being too dark
+- **Touch-friendly interaction**: Prevents text selection during long press with proper touch event handling
+- **Visual feedback**: Active polygons show pointer cursor to indicate interactivity
+
+### 📏 Improved Legend Layout
+- **Wider side legend**: Increased legend width from 120px to 160px when displayed on the side
+- **Better label accommodation**: More space for longer dataset labels and legend titles
+- **Enhanced padding**: Increased legend padding from 32px to 40px for better visual separation
+- **Improved readability**: Longer labels no longer get cut off or require text truncation
+
 ## [1.0.9] - 2025-07-11
 
 ### 🎯 Spark Layout Feature

@@ -13,11 +13,12 @@ R8R (pronounced "radar") is an open source, minimalist component for comparing m
 - ⚡ **Performance Optimized** - Uses React hooks efficiently with ResizeObserver
 - 🔧 **TypeScript Ready** - Full TypeScript support with interfaces
 - 🎭 **Smooth Animations** - Configurable animation duration
-- 🏷️ **Flexible Labels** - Show/hide axis labels, data values, and legend titles
+- 🏷️ **Flexible Labels** - Show/hide axis labels and legend titles
 - 🌙 **Theme System** - Built-in light and dark themes with custom overrides
-- 📋 **Interactive Legend** - Toggle datasets on/off with clean visual states
+- 📋 **Interactive Legend** - Toggle datasets on/off with clean visual states and highlighting
 - 🔄 **Smart Layout** - Legend automatically stacks above chart on mobile devices
 - 🎯 **Touch Optimized** - Larger touch targets and improved readability on mobile
+- 🎨 **Enhanced Highlighting** - Hover and long press interactions for dataset highlighting
 
 ## Installation
 
@@ -105,7 +106,7 @@ npm run build
 | `colors` | `string[]` | Default palette | Array of colors for datasets |
 | `showGrid` | `boolean` | `true` | Whether to show grid lines |
 | `showLabels` | `boolean` | `true` | Whether to show axis labels |
-| `showValues` | `boolean` | `false` | Whether to show data point values |
+
 | `showLegend` | `boolean` | `true` | Whether to show legend |
 | `legendTitle` | `string` | `''` | Title for the legend (empty hides title) |
 | `showBorder` | `boolean` | `true` | Whether to show border around the chart |
@@ -218,7 +219,6 @@ const data = [
   data={data}
   chart={chart}
   colors={['#3b82f6', '#ef4444']}
-  showValues={true}
   showLegend={true}
 />
 ```
@@ -232,7 +232,6 @@ const data = [
   theme="dark"
   colors={['#10b981', '#f59e0b']}
   backgroundColor="#222"
-  showValues={true}
   animationDuration={1500}
 />
 ```
@@ -306,10 +305,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Recent Updates
 
+- **Enhanced Data Highlighting**: Hover and long press interactions for dataset highlighting
+- **Mobile-Friendly Interactions**: Long press (500ms) for mobile highlighting
+- **Chart Polygon Interaction**: Hover over chart polygons to highlight datasets
+- **Improved Legend Layout**: Wider legend (160px) for better label accommodation
 - **Responsive Design**: Automatic mobile layout with legend stacking above chart
 - **Smart Sizing**: ResizeObserver integration for real-time container size detection
 - **Mobile Optimization**: Larger touch targets, improved readability, and better spacing
 - **Enhanced Themes**: Updated grid colors and improved dark theme visibility
-- **Interactive Improvements**: Better data point visibility and hover states
 - **Border Control**: Added `showBorder` prop for better visual separation
 - **Performance**: Optimized rendering and reduced unnecessary re-renders

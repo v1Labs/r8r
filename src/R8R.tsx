@@ -11,8 +11,9 @@ export interface Dataset {
   values: Record<string, number>;
   color?: string;
   status?: 'hidden' | 'inactive' | 'active';
-  showNumbers?: boolean;
 }
+
+export type DatasetState = 'hidden' | 'inactive' | 'active' | 'highlighted';
 
 export interface R8RProps {
   /** Array of datasets to display */
@@ -39,8 +40,7 @@ export interface R8RProps {
   showGrid?: boolean;
   /** Whether to show axis labels */
   showLabels?: boolean;
-  /** Whether to show data point values */
-  showValues?: boolean;
+
   /** Whether to show legend */
   showLegend?: boolean;
   /** Title for the legend (empty string hides the title) */
@@ -49,14 +49,8 @@ export interface R8RProps {
   showBorder?: boolean;
   /** Animation duration in milliseconds */
   animationDuration?: number;
-  /** Whether to show play button for animated data sequence */
-  showPlayButton?: boolean;
-  /** Whether to show timeline slider for manual data exploration */
-  showTimeline?: boolean;
-  /** Speed of play animation in milliseconds (default: 1000) */
-  playSpeed?: number;
-  /** Whether to show mini radar charts in a grid layout instead of overlaying them */
-  showSparkLayout?: boolean;
+
+
   /** Custom CSS class name */
   className?: string;
   /** Custom CSS styles */
@@ -114,26 +108,22 @@ const R8R: React.FC<R8RProps> = ({
   colors = defaultColors,
   showGrid = true,
   showLabels = true,
-  showValues = false,
   showLegend = true,
   legendTitle = '',
   showBorder = true,
   animationDuration = 200,
-  showPlayButton = false,
-  showTimeline = false,
-  playSpeed = 1000,
-  showSparkLayout = false,
+
+
   className = '',
   style = {},
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
-  const [datasetStates, setDatasetStates] = useState<Map<number, { status: 'hidden' | 'inactive' | 'active'; showNumbers: boolean }>>(() => {
+  const [datasetStates, setDatasetStates] = useState<Map<number, { status: DatasetState }>>(() => {
     // Initialize dataset states based on data
     const states = new Map();
     data.forEach((dataset, index) => {
       states.set(index, {
-        status: dataset.status || 'active',
-        showNumbers: dataset.showNumbers || false
+        status: dataset.status || 'active'
       });
     });
     return states;
@@ -141,8 +131,7 @@ const R8R: React.FC<R8RProps> = ({
   const [hoveredDataset, setHoveredDataset] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+
   const [tooltipData, setTooltipData] = useState<{ content: string; x: number; y: number } | null>(null);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -272,8 +261,7 @@ const R8R: React.FC<R8RProps> = ({
     data.forEach((dataset, index) => {
       const existingState = datasetStates.get(index);
       newStates.set(index, {
-        status: dataset.status || existingState?.status || 'active',
-        showNumbers: dataset.showNumbers || existingState?.showNumbers || false
+        status: dataset.status || existingState?.status || 'active'
       });
     });
     setDatasetStates(newStates);
@@ -291,11 +279,11 @@ const R8R: React.FC<R8RProps> = ({
     const shouldStackLegend = actualWidth < 450;
     
     // Calculate legend dimensions
-    const legendWidth = showLegend && !shouldStackLegend ? 120 : 0;
+    const legendWidth = showLegend && !shouldStackLegend ? 160 : 0;
     const legendHeight = showLegend && shouldStackLegend ? 80 : 0;
     
-    // Chart dimensions - subtract 32px for legend padding when legend is to the left
-    const chartWidth = actualWidth - legendWidth - (showLegend && !shouldStackLegend ? 32 : 0);
+    // Chart dimensions - subtract 40px for legend padding when legend is to the left
+    const chartWidth = actualWidth - legendWidth - (showLegend && !shouldStackLegend ? 40 : 0);
     const chartHeight = chartWidth; // Make chart square
     
     // Center and radius
@@ -322,40 +310,7 @@ const R8R: React.FC<R8RProps> = ({
     };
   }, [width, chart, showLegend, containerWidth]);
 
-  // Calculate spark layout dimensions
-  const sparkConfig = useMemo(() => {
-    if (!showSparkLayout) return null;
-    
-    const availableWidth = containerWidth || window.innerWidth;
-    const actualWidth = availableWidth >= width ? width : availableWidth;
-    
-    // Calculate grid dimensions - use 2x2 for exactly 4 datasets, otherwise 3x3
-    const chartsToShow = Math.min(data.length, 9);
-    const gridSize = chartsToShow === 4 ? 2 : 3;
-    const maxCharts = gridSize * gridSize;
-    
-    // Calculate individual spark chart size
-    const padding = 8;
-    const gap = 18;
-    const availableChartWidth = actualWidth - (padding * 2) - (gap * (gridSize - 1));
-    const sparkSize = (availableChartWidth / gridSize) * 0.95; // Slightly smaller SVG boxes
-    
-    // Calculate grid layout
-    const rows = Math.ceil(chartsToShow / gridSize);
-    const totalHeight = (sparkSize * rows) + (gap * (rows - 1)) + (padding * 2);
-    
-    return {
-      gridSize,
-      maxCharts,
-      chartsToShow,
-      sparkSize,
-      padding,
-      gap,
-      rows,
-      totalHeight,
-      actualWidth,
-    };
-  }, [showSparkLayout, data.length, width, containerWidth]);
+
 
   // Calculate polygon points for a dataset
   const calculatePoints = (dataset: Dataset, color: string) => {
@@ -379,30 +334,7 @@ const R8R: React.FC<R8RProps> = ({
     });
   };
 
-  // Calculate polygon points for a spark chart
-  const calculateSparkPoints = (dataset: Dataset, color: string, sparkSize: number) => {
-    const centerX = sparkSize / 2;
-    const centerY = sparkSize / 2;
-    const radius = Math.min(centerX, centerY) * 0.85; // Slightly reduced to prevent cutoff
-    const maxValue = Math.max(...chart.map(d => d.maxValue || 100));
-    const angleStep = (2 * Math.PI) / chart.length;
 
-    return chart.map((point, index) => {
-      const angle = index * angleStep - Math.PI / 2; // Start from top
-      const value = dataset.values[point.label] || 0;
-      const normalizedValue = value / (point.maxValue || maxValue);
-      const pointRadius = radius * normalizedValue;
-      
-      return {
-        x: centerX + pointRadius * Math.cos(angle),
-        y: centerY + pointRadius * Math.sin(angle),
-        label: point.label,
-        value,
-        maxValue: point.maxValue || maxValue,
-        angle,
-      };
-    });
-  };
 
   // Generate all dataset points
   const allDatasetPoints = useMemo(() => {
@@ -458,45 +390,7 @@ const R8R: React.FC<R8RProps> = ({
     return lines;
   }, [chart, chartConfig]);
 
-  // Generate spark chart elements
-  const generateSparkChartElements = (sparkSize: number) => {
-    const centerX = sparkSize / 2;
-    const centerY = sparkSize / 2;
-    const radius = Math.min(centerX, centerY) * 0.85; // Match the radius used in calculateSparkPoints
-    const angleStep = (2 * Math.PI) / chart.length;
-    
-    // Generate grid circles for spark chart
-    const gridCircles = [];
-    const levels = 3; // Fewer levels for spark charts
-    
-    for (let i = 1; i <= levels; i++) {
-      const circleRadius = (radius * i) / levels;
-      gridCircles.push({
-        cx: centerX,
-        cy: centerY,
-        r: circleRadius,
-      });
-    }
-    
-    // Generate axis lines for spark chart
-    const axisLines = [];
-    for (let i = 0; i < chart.length; i++) {
-      const angle = i * angleStep - Math.PI / 2;
-      const endX = centerX + radius * Math.cos(angle);
-      const endY = centerY + radius * Math.sin(angle);
-      
-      axisLines.push({
-        x1: centerX,
-        y1: centerY,
-        x2: endX,
-        y2: endY,
-        label: chart[i].label,
-        angle,
-      });
-    }
-    
-    return { gridCircles, axisLines };
-  };
+
 
   // Create polygon path
   const createPolygonPath = (points: Array<{ x: number; y: number }>) => {
@@ -504,120 +398,7 @@ const R8R: React.FC<R8RProps> = ({
     return `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')} Z`;
   };
 
-  // Render individual spark chart
-  const renderSparkChart = (dataset: Dataset, index: number, sparkSize: number) => {
-    const color = dataset.color || colors[index % colors.length];
-    const points = calculateSparkPoints(dataset, color, sparkSize);
-    const { gridCircles, axisLines } = generateSparkChartElements(sparkSize);
-    
-    // Create tooltip content with formatted labels and values
-    const tooltipContent = Object.entries(dataset.values)
-      .map(([label, value]) => `**${label}**: ${value}`)
-      .join('\n');
-    
-    const handleMouseEnter = (e: React.MouseEvent) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      // Calculate optimal position - anchor below the chart
-      let x = rect.left + rect.width / 2;
-      let y = rect.bottom - 5; // Position closer to the chart
-      
-      // Ensure tooltip doesn't go off-screen
-      if (x < 100) x = 100;
-      if (x > viewportWidth - 100) x = viewportWidth - 100;
-      if (y > viewportHeight - 100) y = rect.top - 15; // Show above if not enough space below
-      
-      setTooltipData({
-        content: tooltipContent,
-        x,
-        y
-      });
-    };
-    
-    const handleMouseLeave = () => {
-      setTooltipData(null);
-    };
-    
-    return (
-      <div
-        key={index}
-        style={{
-          width: sparkSize,
-          height: sparkSize,
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        {/* Dataset label */}
-        <div style={{
-          fontSize: '10px',
-          fontWeight: '600',
-          color: currentTheme.textColor,
-          marginBottom: '-8px',
-          textAlign: 'center',
-          maxWidth: sparkSize - 8,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}>
-          {dataset.label}
-        </div>
-        
-        {/* Spark chart SVG */}
-        <svg
-          width={sparkSize}
-          height={sparkSize}
-          style={{
-            display: 'block',
-          }}
-        >
-          {/* Grid circles */}
-          {gridCircles.map((circle, circleIndex) => (
-            <circle
-              key={`spark-grid-${index}-${circleIndex}`}
-              cx={circle.cx}
-              cy={circle.cy}
-              r={circle.r}
-              fill="none"
-              stroke={currentTheme.gridColor}
-              strokeWidth="1"
-              opacity="0.6"
-            />
-          ))}
 
-          {/* Axis lines */}
-          {axisLines.map((line, lineIndex) => (
-            <line
-              key={`spark-axis-${index}-${lineIndex}`}
-              x1={line.x1}
-              y1={line.y1}
-              x2={line.x2}
-              y2={line.y2}
-              stroke={currentTheme.gridColor}
-              strokeWidth="1"
-              opacity="0.6"
-            />
-          ))}
-
-          {/* Dataset polygon */}
-          <path
-            d={createPolygonPath(points)}
-            fill={color}
-            fillOpacity="0.3"
-            stroke={color}
-            strokeWidth="1.5"
-            strokeOpacity="0.9"
-          />
-        </svg>
-      </div>
-    );
-  };
 
   // Toggle dataset status between active and inactive
   const toggleDataset = (index: number) => {
@@ -626,176 +407,145 @@ const R8R: React.FC<R8RProps> = ({
     if (!currentState) return;
     
     // Toggle between active and inactive (skip hidden for now)
-    const newStatus = currentState.status === 'active' ? 'inactive' : 'active';
+    const newStatus = currentState.status === 'active' || currentState.status === 'highlighted' ? 'inactive' : 'active';
     newStates.set(index, {
-      status: newStatus,
-      showNumbers: currentState.showNumbers
+      status: newStatus
     });
     setDatasetStates(newStates);
   };
 
-  // Toggle showNumbers on mouse enter/leave
+  // Long press state management
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [longPressedDataset, setLongPressedDataset] = useState<number | null>(null);
+
+  const handleMouseDown = (index: number) => {
+    // Only allow long press on active datasets
+    const currentState = datasetStates.get(index);
+    if (!currentState || currentState.status !== 'active') return;
+
+    // Start long press timer
+    const timer = setTimeout(() => {
+      setLongPressedDataset(index);
+      
+      const newStates = new Map(datasetStates);
+      
+      // Clear any existing highlights
+      newStates.forEach((state, stateIndex) => {
+        if (state.status === 'highlighted') {
+          newStates.set(stateIndex, { status: 'active' });
+        }
+      });
+      
+      // Highlight the current dataset
+      newStates.set(index, { status: 'highlighted' });
+      setDatasetStates(newStates);
+    }, 500); // 500ms long press delay
+
+    setLongPressTimer(timer);
+  };
+
+  const handleMouseUp = (index: number) => {
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+    
+    // If this was a long press, don't remove highlight immediately
+    if (longPressedDataset === index) {
+      return;
+    }
+  };
+
   const handleMouseEnter = (index: number) => {
     setHoveredDataset(index);
-    const newStates = new Map(datasetStates);
-    const currentState = newStates.get(index);
-    if (currentState) {
-      newStates.set(index, {
-        status: currentState.status,
-        showNumbers: true
+    
+    // Only highlight if the dataset is active
+    const currentState = datasetStates.get(index);
+    if (currentState && currentState.status === 'active') {
+      const newStates = new Map(datasetStates);
+      
+      // Clear any existing highlights
+      newStates.forEach((state, stateIndex) => {
+        if (state.status === 'highlighted') {
+          newStates.set(stateIndex, { status: 'active' });
+        }
       });
+      
+      // Highlight the current dataset
+      newStates.set(index, { status: 'highlighted' });
       setDatasetStates(newStates);
     }
   };
 
   const handleMouseLeave = (index: number) => {
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+    
     setHoveredDataset(null);
-    const newStates = new Map(datasetStates);
-    const currentState = newStates.get(index);
-    if (currentState) {
-      newStates.set(index, {
-        status: currentState.status,
-        showNumbers: false
-      });
-      setDatasetStates(newStates);
+    
+    // Only remove highlight if it wasn't a long press
+    if (longPressedDataset !== index) {
+      const currentState = datasetStates.get(index);
+      if (currentState && currentState.status === 'highlighted') {
+        const newStates = new Map(datasetStates);
+        newStates.set(index, { status: 'active' });
+        setDatasetStates(newStates);
+      }
     }
   };
 
-  // Play functionality
-  const startPlaySequence = () => {
-    if (isPlaying || data.length === 0) return;
-    
-    setIsPlaying(true);
-    setCurrentStep(0);
-    
-    // Reset all datasets to hidden initially
-    const newStates = new Map();
-    data.forEach((_, index) => {
-      newStates.set(index, {
-        status: 'hidden' as const,
-        showNumbers: false
-      });
-    });
-    setDatasetStates(newStates);
-  };
-
-  const stopPlaySequence = () => {
-    setIsPlaying(false);
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = null;
-    }
-  };
-
-  const resetSequence = () => {
-    setIsPlaying(false);
-    setCurrentStep(0);
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = null;
-    }
-    
-    // Reset to initial state: first dataset active, rest hidden
-    const newStates = new Map();
-    data.forEach((dataset, index) => {
-      if (index === 0) {
-        // First dataset is active with numbers
-        newStates.set(index, {
-          status: 'active' as const,
-          showNumbers: true
-        });
-      } else {
-        // All other datasets are hidden
-        newStates.set(index, {
-          status: 'hidden' as const,
-          showNumbers: false
-        });
-      }
-    });
-    setDatasetStates(newStates);
-  };
-
-  const handleTimelineChange = (value: number) => {
-    if (isPlaying) {
-      stopPlaySequence();
-    }
-    
-    const step = Math.floor((value / 100) * (data.length - 1));
-    setCurrentStep(step);
-    
-    const newStates = new Map();
-    data.forEach((_, index) => {
-      if (index < step) {
-        // Previous steps are inactive
-        newStates.set(index, {
-          status: 'inactive' as const,
-          showNumbers: false
-        });
-      } else if (index === step) {
-        // Current step is active with numbers
-        newStates.set(index, {
-          status: 'active' as const,
-          showNumbers: true
-        });
-      } else {
-        // Future steps are hidden
-        newStates.set(index, {
-          status: 'hidden' as const,
-          showNumbers: false
-        });
-      }
-    });
-    setDatasetStates(newStates);
-  };
-
-  // Cleanup animation timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Handle play sequence
-  useEffect(() => {
-    if (!isPlaying || currentStep >= data.length) {
-      if (isPlaying && currentStep >= data.length) {
-        setIsPlaying(false);
-      }
+  const handleClick = (index: number) => {
+    // If this was a long press, don't toggle
+    if (longPressedDataset === index) {
+      setLongPressedDataset(null);
       return;
     }
+    
+    // Regular click behavior - toggle dataset
+    toggleDataset(index);
+  };
 
-    // Update dataset states for current step
-    const newStates = new Map();
-    data.forEach((_, index) => {
-      if (index < currentStep) {
-        // Previous steps are inactive
-        newStates.set(index, {
-          status: 'inactive' as const,
-          showNumbers: false
-        });
-      } else if (index === currentStep) {
-        // Current step is active with numbers
-        newStates.set(index, {
-          status: 'active' as const,
-          showNumbers: true
-        });
-      } else {
-        // Future steps are hidden
-        newStates.set(index, {
-          status: 'hidden' as const,
-          showNumbers: false
-        });
+  // Touch event handlers for mobile
+  const handleTouchStart = (index: number) => {
+    handleMouseDown(index);
+  };
+
+  const handleTouchEnd = (index: number) => {
+    handleMouseUp(index);
+  };
+
+  const handleTouchCancel = (index: number) => {
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+    
+    setHoveredDataset(null);
+    
+    // Remove highlight if it wasn't a long press
+    if (longPressedDataset !== index) {
+      const currentState = datasetStates.get(index);
+      if (currentState && currentState.status === 'highlighted') {
+        const newStates = new Map(datasetStates);
+        newStates.set(index, { status: 'active' });
+        setDatasetStates(newStates);
       }
-    });
-    setDatasetStates(newStates);
+    }
+  };
 
-    // Schedule next step
-    animationTimeoutRef.current = setTimeout(() => {
-      setCurrentStep(prev => prev + 1);
-    }, playSpeed);
-  }, [isPlaying, currentStep, data.length, playSpeed]);
+
+
+
+
+  // Check if any dataset is currently highlighted
+  const hasHighlightedDataset = () => {
+    return Array.from(datasetStates.values()).some(state => state.status === 'highlighted');
+  };
 
   // Get dataset color based on status and hover state
   const getDatasetColor = (index: number, baseColor: string) => {
@@ -830,6 +580,7 @@ const R8R: React.FC<R8RProps> = ({
       return `rgba(128, 128, 128, ${opacity})`;
     }
     
+    // For active and highlighted datasets, return the original color
     return baseColor;
   };
 
@@ -844,10 +595,8 @@ const R8R: React.FC<R8RProps> = ({
     <div
       className={`r8r-chart ${className}`}
       style={{
-        width: showSparkLayout ? sparkConfig?.actualWidth || chartConfig.actualWidth : chartConfig.actualWidth,
-        height: showSparkLayout 
-          ? (sparkConfig?.totalHeight || 0) + (showPlayButton || showTimeline ? 80 : 0)
-          : chartConfig.totalHeight + (showPlayButton || showTimeline ? 80 : 0),
+        width: chartConfig.actualWidth,
+        height: chartConfig.totalHeight,
         backgroundColor: currentTheme.backgroundColor,
         borderRadius: '8px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
@@ -922,34 +671,11 @@ const R8R: React.FC<R8RProps> = ({
         `}
       </style>
       {/* Chart and Legend Container */}
-      {showSparkLayout ? (
-        // Spark Layout - Grid of mini radar charts
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          padding: `${sparkConfig?.padding}px`,
-        }}>
-          {/* Spark Grid */}
-          <div style={{
-            display: 'grid',
-            padding: '10px',
-            gridTemplateColumns: `repeat(${sparkConfig?.gridSize}, 1fr)`,
-            gap: `${sparkConfig?.gap}px`,
-            width: 'calc(100% - 20px)',
-          }}>
-            {data.slice(0, sparkConfig?.chartsToShow || 0).map((dataset, index) => 
-              renderSparkChart(dataset, index, sparkConfig?.sparkSize || 100)
-            )}
-          </div>
-        </div>
-      ) : (
-        // Regular Layout - Single chart with legend
-        <div style={{
-          display: 'flex',
-          flexDirection: chartConfig.shouldStackLegend ? 'column' : 'row',
-          flex: 1,
-        }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: chartConfig.shouldStackLegend ? 'column' : 'row',
+        flex: 1,
+      }}>
           {/* Legend */}
           {showLegend && (
             <div
@@ -992,7 +718,8 @@ const R8R: React.FC<R8RProps> = ({
                   const datasetState = datasetStates.get(index);
                   if (!datasetState || datasetState.status === 'hidden') return null;
                   
-                  const isActive = datasetState.status === 'active';
+                  const isActive = datasetState.status === 'active' || datasetState.status === 'highlighted';
+                  const isHighlighted = datasetState.status === 'highlighted';
                   const isHovered = hoveredDataset === index;
                   const displayColor = getDatasetColor(index, color);
                   const isVerySmallScreen = chartConfig.actualWidth <= 480;
@@ -1000,9 +727,14 @@ const R8R: React.FC<R8RProps> = ({
                   return (
                     <div
                       key={index}
-                      onClick={() => toggleDataset(index)}
+                      onClick={() => handleClick(index)}
+                      onMouseDown={() => handleMouseDown(index)}
+                      onMouseUp={() => handleMouseUp(index)}
                       onMouseEnter={() => handleMouseEnter(index)}
                       onMouseLeave={() => handleMouseLeave(index)}
+                      onTouchStart={() => handleTouchStart(index)}
+                      onTouchEnd={() => handleTouchEnd(index)}
+                      onTouchCancel={() => handleTouchCancel(index)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1013,12 +745,15 @@ const R8R: React.FC<R8RProps> = ({
                         opacity: isActive ? 1 : 0.4,
                         padding: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '3px 6px' : '4px 8px') : '4px 8px',
                         borderRadius: '4px',
-                        backgroundColor: isActive ? `${color}20` : 'transparent',
-                        border: `1px solid ${isActive ? color : 'transparent'}`,
+                        backgroundColor: isActive ? (isHighlighted ? `${displayColor}40` : `${displayColor}20`) : 'transparent',
+                        border: `1px solid ${isActive ? displayColor : 'transparent'}`,
                         transition: 'all 0.2s ease',
                         position: 'relative',
                         flexShrink: 0,
                         whiteSpace: 'nowrap',
+                        userSelect: 'none', // Prevent text selection during long press
+                        WebkitUserSelect: 'none', // For Safari
+                        MozUserSelect: 'none', // For Firefox
                       }}
                     >
                       <div style={{
@@ -1078,7 +813,6 @@ const R8R: React.FC<R8RProps> = ({
                 <text
                   x={line.x2 + Math.cos(line.angle) * 15}
                   y={line.y2 + Math.sin(line.angle) * 15}
-                  dy={line.y2 > chartConfig.centerY ? 15 : -15}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize="12"
@@ -1088,17 +822,6 @@ const R8R: React.FC<R8RProps> = ({
                   {line.label}
                 </text>
               )}
-              <text
-                x={line.x2 + Math.cos(line.angle) * 15}
-                y={line.y2 + Math.sin(line.angle) * 15}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="14"
-                fill={currentTheme.textColor}
-                fontWeight="700"
-              >
-                {chart[index].maxValue || 100}
-              </text>
             </g>
           ))}
 
@@ -1109,11 +832,11 @@ const R8R: React.FC<R8RProps> = ({
               if (!datasetState || datasetState.status === 'hidden') return null;
               
               const isActive = datasetState.status === 'active';
-              const showNumbers = datasetState.showNumbers;
+              const isHighlighted = datasetState.status === 'highlighted';
               const displayColor = getDatasetColor(index, color);
               
               // For inactive datasets, use grayscale for stroke and nearly transparent fill
-              const strokeColor = isActive ? displayColor : (() => {
+              const strokeColor = (isActive || isHighlighted) ? displayColor : (() => {
                 const opacity = theme === 'dark' ? 0.9 : 0.6; // Higher opacity for dark theme
                 
                 // Handle both hex and rgba colors
@@ -1140,7 +863,7 @@ const R8R: React.FC<R8RProps> = ({
                 return `rgba(128, 128, 128, ${opacity})`;
               })();
               
-              const fillColor = isActive ? displayColor : strokeColor; // Use grayscale for inactive fill
+              const fillColor = (isActive || isHighlighted) ? displayColor : strokeColor; // Use grayscale for inactive fill
               
               return {
                 dataset,
@@ -1149,7 +872,7 @@ const R8R: React.FC<R8RProps> = ({
                 index,
                 datasetState,
                 isActive,
-                showNumbers,
+                isHighlighted,
                 displayColor,
                 strokeColor,
                 fillColor
@@ -1157,164 +880,41 @@ const R8R: React.FC<R8RProps> = ({
             })
             .filter((item): item is NonNullable<typeof item> => item !== null)
             .sort((a, b) => {
-              // Sort by: inactive first, then active, then those with numbers on top
-              if (a.isActive !== b.isActive) {
-                return a.isActive ? 1 : -1; // Inactive first
+              // Sort by: inactive first (bottom), then active, then highlighted (top)
+              if (a.isHighlighted !== b.isHighlighted) {
+                return a.isHighlighted ? 1 : -1; // Highlighted last (on top)
               }
-              if (a.showNumbers !== b.showNumbers) {
-                return a.showNumbers ? 1 : -1; // Those without numbers first
+              if (a.isActive !== b.isActive) {
+                return a.isActive ? 1 : -1; // Active last (above inactive)
               }
               return 0; // Keep original order for same type
             })
-            .map(({ dataset, points, color, index, strokeColor, fillColor, isActive, showNumbers }) => (
+            .map(({ dataset, points, color, index, strokeColor, fillColor, isActive, isHighlighted }) => (
               <g key={`dataset-${index}`}>
                 <path
                   d={createPolygonPath(points)}
                   fill={fillColor}
-                  fillOpacity={isActive ? "0.2" : (theme === 'dark' ? "0.2" : "0.1")}
+                  fillOpacity={
+                    isHighlighted ? "0.75" : // 75% opacity for highlighted
+                    isActive ? (hasHighlightedDataset() ? "0.0" : "0.2") : // 0% if something is highlighted, otherwise normal
+                    "0.0" // 0% opacity for inactive
+                  }
                   stroke={strokeColor}
                   strokeWidth="2"
-                  strokeOpacity={isActive ? "0.8" : "0.6"}
+                  strokeOpacity={(isActive || isHighlighted) ? "0.8" : "0.6"}
+                  style={{ cursor: isActive ? 'pointer' : 'default' }}
+                  onMouseEnter={() => isActive && handleMouseEnter(index)}
+                  onMouseLeave={() => isActive && handleMouseLeave(index)}
+                  onTouchStart={() => isActive && handleTouchStart(index)}
+                  onTouchEnd={() => isActive && handleTouchEnd(index)}
+                  onTouchCancel={() => isActive && handleTouchCancel(index)}
                 />
-                {/* Data points */}
-                {points.map((point, pointIndex) => (
-                  <g key={`point-${index}-${pointIndex}`}>
-                    {showNumbers && (
-                      <>
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r={14}
-                          fill={strokeColor}
-                          opacity="0.9"
-                        />
-                        <text
-                          x={point.x}
-                          y={point.y}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          fontSize={12}
-                          fill="white"
-                          fontWeight="700"
-                        >
-                          {point.value}
-                        </text>
-                      </>
-                    )}
-                  </g>
-                ))}
+
               </g>
             ))}
         </svg>
       </div>
-      )}
-      {(showPlayButton || showTimeline) && (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '16px',
-          padding: '16px',
-          borderTop: `1px solid ${currentTheme.legendBorderColor}`,
-          backgroundColor: currentTheme.legendBackgroundColor,
-        }}>
-          {/* Play Button */}
-          {showPlayButton && (
-            <button
-              onClick={isPlaying ? stopPlaySequence : (currentStep >= data.length ? resetSequence : startPlaySequence)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '40px',
-                height: '40px',
-                backgroundColor: 'transparent',
-                color: currentTheme.textColor,
-                border: `2px solid ${currentTheme.textColor}`,
-                borderRadius: '50%',
-                fontSize: '16px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = `${currentTheme.textColor}20`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              {isPlaying ? (
-                <svg width={24} height={24} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
-                </svg>
-              ) : currentStep >= data.length ? (
-                <svg width={24} height={24} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M4.755 10.059a7.5 7.5 0 0 1 12.548-3.364l1.903 1.903h-3.183a.75.75 0 1 0 0 1.5h4.992a.75.75 0 0 0 .75-.75V4.356a.75.75 0 0 0-1.5 0v3.18l-1.9-1.9A9 9 0 0 0 3.306 9.67a.75.75 0 1 0 1.45.388Zm15.408 3.352a.75.75 0 0 0-.919.53 7.5 7.5 0 0 1-12.548 3.364l-1.902-1.903h3.183a.75.75 0 0 0 0-1.5H2.984a.75.75 0 0 0-.75.75v4.992a.75.75 0 0 0 1.5 0v-3.18l1.9 1.9a9 9 0 0 0 15.059-4.035.75.75 0 0 0-.53-.918Z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg width={24} height={24} style={{ transform: 'translateX(2px)' }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-                </svg>
-              )}
-            </button>
-          )}
 
-          {/* Timeline Slider */}
-          {showTimeline && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '8px',
-              width: '100%',
-              maxWidth: '300px',
-              position: 'relative',
-            }}>
-              <div style={{
-                position: 'relative',
-                width: '100%',
-              }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={data.length > 1 ? Math.round((currentStep / (data.length - 1)) * 100) : 0}
-                  onChange={(e) => handleTimelineChange(parseInt(e.target.value))}
-                  style={{
-                    width: '100%',
-                    height: '6px',
-                    borderRadius: '3px',
-                    background: `linear-gradient(to right, #000000 0%, #000000 ${Math.round((currentStep / (data.length - 1)) * 100)}%, #e5e7eb ${Math.round((currentStep / (data.length - 1)) * 100)}%, #e5e7eb 100%)`,
-                    outline: 'none',
-                    cursor: 'pointer',
-                    WebkitAppearance: 'none',
-                    appearance: 'none',
-                  }}
-                />
-                {/* Tooltip */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: '20px',
-                  left: `${Math.max(2, Math.min(98, data.length > 1 ? Math.round((currentStep / (data.length - 1)) * 100) : 0))}%`,
-                  transform: 'translateX(-50%)',
-                  backgroundColor: currentTheme.textColor,
-                  color: currentTheme.backgroundColor,
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  whiteSpace: 'nowrap',
-                  pointerEvents: 'none',
-                  opacity: data.length > 0 ? 1 : 0,
-                }}>
-                  {data.length > 0 && currentStep < data.length ? data[currentStep].label : (data.length > 0 ? data[data.length - 1].label : 'No data')}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
       
       {/* Custom Tooltip */}
       {tooltipData && (

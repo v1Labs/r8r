@@ -19,6 +19,8 @@ R8R (pronounced "radar") is an open source, minimalist component for comparing m
 - 🔄 **Smart Layout** - Legend automatically stacks above chart on mobile devices
 - 🎯 **Touch Optimized** - Larger touch targets and improved readability on mobile
 - 🎨 **Enhanced Highlighting** - Hover and long press interactions for dataset highlighting
+- 🎯 **Progressive Disclosure** - Hover/long press axis labels to reveal detailed range information
+- 🎨 **Icon Support** - Add visual icons to chart dimensions with responsive sizing
 
 ## Installation
 
@@ -111,6 +113,7 @@ npm run build
 | `legendTitle` | `string` | `''` | Title for the legend (empty hides title) |
 | `showBorder` | `boolean` | `true` | Whether to show border around the chart |
 | `animationDuration` | `number` | `200` | Animation duration in milliseconds |
+| `iconSize` | `number` | `32` | Size of axis icons in pixels (16-36px recommended) |
 | `className` | `string` | `''` | Custom CSS class name |
 | `style` | `React.CSSProperties` | `{}` | Custom CSS styles |
 
@@ -118,9 +121,10 @@ npm run build
 
 ```typescript
 interface DataPoint {
-  label: string;      // Axis label
-  value: number;      // Data value (used for maxValue calculation)
-  maxValue?: number;  // Optional maximum value (defaults to 100)
+  label: string;                    // Axis label
+  value: number;                    // Data value (used for maxValue calculation)
+  maxValue?: number;                // Optional maximum value (defaults to 100)
+  icon?: React.ReactNode | string;  // Optional icon (React component or SVG string)
 }
 
 interface Dataset {
@@ -247,6 +251,59 @@ const data = [
 />
 ```
 
+### Progressive Disclosure
+
+R8R supports progressive disclosure for detailed information:
+
+- **Axis interaction**: Hover or long press on axis labels to reveal range details
+- **Intersection lines**: Tiny perpendicular lines show grid intersections (0%, 20%, 40%, 60%, 80%, 100%)
+- **Number labels**: Each intersection displays the actual value based on maxValue
+- **Axis overlay**: Highlighted axis gets a matching overlay line
+- **Smooth animations**: 200ms transitions for all disclosure elements
+- **Cross-platform**: Works on desktop (hover) and mobile (long press)
+
+```jsx
+// Progressive disclosure is automatic - just hover/long press axis labels
+<R8R 
+  data={data}
+  chart={chart}
+  showLabels={true}
+/>
+```
+
+### Icon Support
+
+Add visual icons to chart dimensions for better visual interest:
+
+```jsx
+const chart = [
+  { 
+    label: 'Speed', 
+    value: 0, 
+    maxValue: 200,
+    icon: '🚀' // Emoji
+  },
+  { 
+    label: 'Reliability', 
+    value: 0, 
+    maxValue: 100,
+    icon: '<svg>...</svg>' // SVG string
+  },
+  { 
+    label: 'Cost', 
+    value: 0, 
+    maxValue: 50,
+    icon: <MyIcon /> // React component
+  }
+];
+
+<R8R 
+  data={data}
+  chart={chart}
+  iconSize={24} // Control icon size
+/>
+```
+
 ### Mobile Responsive
 
 R8R automatically adapts to mobile devices:
@@ -305,6 +362,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Recent Updates
 
+- **Progressive Disclosure**: Hover/long press axis labels to reveal detailed range information
+- **Icon Support**: Add visual icons to chart dimensions with responsive sizing (16-36px)
+- **Smart Label Rotation**: Axis labels automatically rotate for optimal readability
 - **Enhanced Data Highlighting**: Hover and long press interactions for dataset highlighting
 - **Mobile-Friendly Interactions**: Long press (500ms) for mobile highlighting
 - **Chart Polygon Interaction**: Hover over chart polygons to highlight datasets

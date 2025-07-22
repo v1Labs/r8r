@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import R8R from './R8R';
+import Icons from './Icons';
 
 const meta: Meta<typeof R8R> = {
   title: 'Components/R8R',
@@ -54,6 +55,10 @@ const meta: Meta<typeof R8R> = {
     animationDuration: {
       control: { type: 'range', min: 0, max: 1000, step: 50 },
       description: 'Animation duration in milliseconds',
+    },
+    iconSize: {
+      control: { type: 'range', min: 16, max: 36, step: 4 },
+      description: 'Size of axis icons in pixels',
     },
   },
 };
@@ -115,6 +120,63 @@ const performanceChart = [
   { label: 'Graphics', value: 0, maxValue: 100 }
 ];
 
+// Icon examples
+const iconChart = [
+  { 
+    label: 'Speed', 
+    value: 0, 
+    maxValue: 200,
+    icon: Icons.rocket(20)
+  },
+  { 
+    label: 'Reliability', 
+    value: 0, 
+    maxValue: 100,
+    icon: Icons.shield(20)
+  },
+  { 
+    label: 'Cost', 
+    value: 0, 
+    maxValue: 50,
+    icon: Icons.money(20)
+  },
+  { 
+    label: 'Ease of Use', 
+    value: 0, 
+    maxValue: 100,
+    icon: Icons.sparkles(20)
+  },
+  { 
+    label: 'Support', 
+    value: 0, 
+    maxValue: 100,
+    icon: Icons.phone(20)
+  }
+];
+
+const iconData = [
+  {
+    label: 'Product A',
+    values: {
+      'Speed': 180,
+      'Reliability': 95,
+      'Cost': 35,
+      'Ease of Use': 85,
+      'Support': 90
+    }
+  },
+  {
+    label: 'Product B',
+    values: {
+      'Speed': 120,
+      'Reliability': 88,
+      'Cost': 20,
+      'Ease of Use': 75,
+      'Support': 70
+    }
+  }
+];
+
 export const Comparison: Story = {
   args: {
     data: comparisonData,
@@ -157,6 +219,22 @@ export const DarkTheme: Story = {
     legendTitle: 'Dark Theme Demo',
     colors: ['#10b981', '#f59e0b'],
     animationDuration: 250,
+  },
+};
+
+export const WithIcons: Story = {
+  args: {
+    data: iconData,
+    chart: iconChart,
+    width: 600,
+    theme: 'light',
+    showGrid: true,
+    showLabels: true,
+    showLegend: true,
+    legendTitle: 'Product Comparison',
+    colors: ['#3b82f6', '#ef4444'],
+    animationDuration: 200,
+    iconSize: 20,
   },
 };
 

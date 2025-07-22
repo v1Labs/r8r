@@ -4,6 +4,7 @@ export interface DataPoint {
   label: string;
   value: number;
   maxValue?: number;
+  icon?: React.ReactNode | string; // React component or SVG string
 }
 
 export interface Dataset {
@@ -49,7 +50,8 @@ export interface R8RProps {
   showBorder?: boolean;
   /** Animation duration in milliseconds */
   animationDuration?: number;
-
+  /** Size of axis icons in pixels */
+  iconSize?: number;
 
   /** Custom CSS class name */
   className?: string;
@@ -112,6 +114,7 @@ const R8R: React.FC<R8RProps> = ({
   legendTitle = '',
   showBorder = true,
   animationDuration = 200,
+  iconSize = 32,
 
 
   className = '',
@@ -132,7 +135,9 @@ const R8R: React.FC<R8RProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  const [tooltipData, setTooltipData] = useState<{ content: string; x: number; y: number } | null>(null);
+  const [highlightedAxis, setHighlightedAxis] = useState<number | null>(null);
+  const [axisLongPressTimer, setAxisLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isAxisAnimating, setIsAxisAnimating] = useState(false);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -384,11 +389,79 @@ const R8R: React.FC<R8RProps> = ({
         y2: endY,
         label: chart[i].label,
         angle,
+        index: i,
+        icon: chart[i].icon,
       });
     }
     
     return lines;
   }, [chart, chartConfig]);
+
+  // Generate intersection lines and labels for highlighted axis
+  const intersectionElements = useMemo(() => {
+    if (highlightedAxis === null) return { lines: [], labels: [], axisOverlay: null };
+    
+    const { centerX, centerY, radius } = chartConfig;
+    const highlightedLine = axisLines[highlightedAxis];
+    if (!highlightedLine) return { lines: [], labels: [], axisOverlay: null };
+    
+    const lines = [];
+    const labels = [];
+    const levels = 6; // 0%, 20%, 40%, 60%, 80%, 100%
+    
+    for (let i = 0; i < levels; i++) {
+      const percentage = i / (levels - 1); // 0, 0.2, 0.4, 0.6, 0.8, 1
+      const pointRadius = radius * percentage;
+      
+      // Calculate intersection point on the highlighted axis
+      const intersectionX = centerX + pointRadius * Math.cos(highlightedLine.angle);
+      const intersectionY = centerY + pointRadius * Math.sin(highlightedLine.angle);
+      
+      // Calculate perpendicular line (intersecting line) - only to the right side
+      const perpAngle = highlightedLine.angle + Math.PI / 2;
+      const lineLength = 10; // Half the original length
+      
+      // Only draw line to the right side of the axis
+      const lineStartX = intersectionX;
+      const lineStartY = intersectionY;
+      const lineEndX = intersectionX + lineLength * Math.cos(perpAngle);
+      const lineEndY = intersectionY + lineLength * Math.sin(perpAngle);
+      
+      lines.push({
+        x1: lineStartX,
+        y1: lineStartY,
+        x2: lineEndX,
+        y2: lineEndY,
+      });
+      
+      // Calculate label position (perpendicular to the axis, away from center)
+      const labelDistance = 20; // Balanced distance - not too close, not too far
+      const labelAngle = highlightedLine.angle + Math.PI / 2;
+      const labelX = intersectionX + labelDistance * Math.cos(labelAngle);
+      const labelY = intersectionY + labelDistance * Math.sin(labelAngle);
+      
+      // Calculate the actual value based on the chart's maxValue
+      const maxValue = chart[highlightedAxis]?.maxValue || chartConfig.maxValue;
+      const actualValue = Math.round(percentage * maxValue);
+      
+      labels.push({
+        x: labelX,
+        y: labelY,
+        text: actualValue.toString(),
+        angle: labelAngle,
+      });
+    }
+    
+    // Create axis overlay line
+    const axisOverlay = {
+      x1: highlightedLine.x1,
+      y1: highlightedLine.y1,
+      x2: highlightedLine.x2,
+      y2: highlightedLine.y2,
+    };
+    
+    return { lines, labels, axisOverlay };
+  }, [highlightedAxis, axisLines, chartConfig, chart]);
 
 
 
@@ -396,6 +469,82 @@ const R8R: React.FC<R8RProps> = ({
   const createPolygonPath = (points: Array<{ x: number; y: number }>) => {
     if (points.length === 0) return '';
     return `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')} Z`;
+  };
+
+  // Render icon helper function
+  const renderIcon = (icon: React.ReactNode | string | undefined, x: number, y: number, size: number = 32) => {
+    if (!icon) return null;
+    
+    if (typeof icon === 'string') {
+      // SVG string - create a foreignObject to render it
+      // Replace hardcoded width/height in SVG with dynamic values and fix currentColor
+      const dynamicIcon = icon
+        .replace(/\swidth="[^"]*"/g, ` width="${size}"`)
+        .replace(/\sheight="[^"]*"/g, ` height="${size}"`)
+        .replace(/stroke="currentColor"/g, `stroke="${currentTheme.textColor}"`)
+        .replace(/fill="currentColor"/g, `fill="${currentTheme.textColor}"`);
+      
+      return (
+        <foreignObject
+          x={x - size / 2}
+          y={y - size / 2}
+          width={size}
+          height={size}
+          style={{
+            overflow: 'visible',
+          }}
+        >
+          <div
+            style={{
+              width: size,
+              height: size,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: currentTheme.textColor,
+            }}
+            dangerouslySetInnerHTML={{ __html: dynamicIcon }}
+          />
+        </foreignObject>
+      );
+    } else {
+      // React component - clone and add size props
+      const iconWithSize = React.isValidElement(icon) 
+        ? React.cloneElement(icon as React.ReactElement, {
+            width: size,
+            height: size,
+            style: {
+              width: size,
+              height: size,
+              color: currentTheme.textColor,
+            }
+          })
+        : icon;
+      
+      return (
+        <foreignObject
+          x={x - size / 2}
+          y={y - size / 2}
+          width={size}
+          height={size}
+          style={{
+            overflow: 'visible',
+          }}
+        >
+          <div
+            style={{
+              width: size,
+              height: size,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {iconWithSize}
+          </div>
+        </foreignObject>
+      );
+    }
   };
 
 
@@ -509,6 +658,65 @@ const R8R: React.FC<R8RProps> = ({
     toggleDataset(index);
   };
 
+  // Axis interaction handlers
+  const handleAxisMouseDown = (axisIndex: number) => {
+    // Start long press timer for axis
+    const timer = setTimeout(() => {
+      setIsAxisAnimating(true);
+      setHighlightedAxis(axisIndex);
+      setTimeout(() => setIsAxisAnimating(false), 200);
+    }, 500); // 500ms long press delay
+
+    setAxisLongPressTimer(timer);
+  };
+
+  const handleAxisMouseUp = (axisIndex: number) => {
+    // Clear long press timer
+    if (axisLongPressTimer) {
+      clearTimeout(axisLongPressTimer);
+      setAxisLongPressTimer(null);
+    }
+  };
+
+  const handleAxisMouseEnter = (axisIndex: number) => {
+    // Highlight axis on hover (desktop)
+    setIsAxisAnimating(true);
+    setHighlightedAxis(axisIndex);
+    setTimeout(() => setIsAxisAnimating(false), 200);
+  };
+
+  const handleAxisMouseLeave = (axisIndex: number) => {
+    // Clear long press timer
+    if (axisLongPressTimer) {
+      clearTimeout(axisLongPressTimer);
+      setAxisLongPressTimer(null);
+    }
+    
+    // Remove highlight on mouse leave
+    setIsAxisAnimating(true);
+    setHighlightedAxis(null);
+    setTimeout(() => setIsAxisAnimating(false), 200);
+  };
+
+  const handleAxisTouchStart = (axisIndex: number) => {
+    handleAxisMouseDown(axisIndex);
+  };
+
+  const handleAxisTouchEnd = (axisIndex: number) => {
+    handleAxisMouseUp(axisIndex);
+  };
+
+  const handleAxisTouchCancel = (axisIndex: number) => {
+    // Clear long press timer
+    if (axisLongPressTimer) {
+      clearTimeout(axisLongPressTimer);
+      setAxisLongPressTimer(null);
+    }
+    
+    // Remove highlight
+    setHighlightedAxis(null);
+  };
+
   // Touch event handlers for mobile
   const handleTouchStart = (index: number) => {
     handleMouseDown(index);
@@ -613,63 +821,6 @@ const R8R: React.FC<R8RProps> = ({
       }}
       ref={containerRef}
     >
-      {/* Custom styles for range input */}
-      <style>
-        {`
-          .r8r-chart input[type="range"] {
-            background: transparent;
-          }
-          .r8r-chart input[type="range"]::-webkit-slider-track {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: #e5e7eb;
-            border: none;
-          }
-          .r8r-chart input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #000000;
-            cursor: pointer;
-            border: none;
-            margin-top: -2px;
-          }
-          .r8r-chart input[type="range"]::-moz-range-track {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: #e5e7eb;
-            border: none;
-          }
-          .r8r-chart input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #000000;
-            cursor: pointer;
-            border: none;
-          }
-          .r8r-chart input[type="range"]::-ms-track {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: #e5e7eb;
-            border: none;
-            color: transparent;
-          }
-          .r8r-chart input[type="range"]::-ms-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #000000;
-            cursor: pointer;
-            border: none;
-          }
-        `}
-      </style>
       {/* Chart and Legend Container */}
       <div style={{
         display: 'flex',
@@ -810,17 +961,40 @@ const R8R: React.FC<R8RProps> = ({
                 strokeWidth="1"
               />
               {showLabels && (
-                <text
-                  x={line.x2 + Math.cos(line.angle) * 15}
-                  y={line.y2 + Math.sin(line.angle) * 15}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize="12"
-                  fill={currentTheme.textColor}
-                  fontWeight="500"
-                >
-                  {line.label}
-                </text>
+                <g>
+                  {/* Icon */}
+                  {line.icon && renderIcon(
+                    line.icon,
+                    line.x2 + Math.cos(line.angle) * (20 + iconSize / 2),
+                    line.y2 + Math.sin(line.angle) * (20 + iconSize / 2),
+                    iconSize
+                  )}
+                  {/* Label */}
+                  <text
+                      x={line.x2 + Math.cos(line.angle) * 10}
+                      y={line.y2 + Math.sin(line.angle) * 10}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize="10"
+                      fill={currentTheme.textColor}
+                      fontWeight="600"
+                      style={{ 
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        transform: `rotate(${(line.angle + Math.PI / 2 + (Math.sin(line.angle) > 0 ? Math.PI : 0)) * 180 / Math.PI}deg)`,
+                        transformOrigin: `${line.x2 + Math.cos(line.angle) * 10}px ${line.y2 + Math.sin(line.angle) * 10}px`,
+                      }}
+                    onMouseEnter={() => handleAxisMouseEnter(index)}
+                    onMouseLeave={() => handleAxisMouseLeave(index)}
+                    onMouseDown={() => handleAxisMouseDown(index)}
+                    onMouseUp={() => handleAxisMouseUp(index)}
+                    onTouchStart={() => handleAxisTouchStart(index)}
+                    onTouchEnd={() => handleAxisTouchEnd(index)}
+                    onTouchCancel={() => handleAxisTouchCancel(index)}
+                  >
+                    {line.label}
+                  </text>
+                </g>
               )}
             </g>
           ))}
@@ -912,63 +1086,61 @@ const R8R: React.FC<R8RProps> = ({
 
               </g>
             ))}
+
+          {/* Intersection lines for highlighted axis - rendered on top */}
+          {intersectionElements.lines.map((line, index) => (
+            <line
+              key={`intersection-${index}`}
+              x1={line.x1}
+              y1={line.y1}
+              x2={line.x2}
+              y2={line.y2}
+              stroke={currentTheme.textColor}
+              strokeWidth="1"
+              strokeOpacity={isAxisAnimating ? "0.4" : "0.8"}
+              style={{
+                transition: 'all 0.2s ease',
+              }}
+            />
+          ))}
+
+          {/* Intersection labels for highlighted axis - rendered on top */}
+          {intersectionElements.labels.map((label, index) => (
+            <text
+              key={`intersection-label-${index}`}
+              x={label.x}
+              y={label.y}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="10"
+              fill={currentTheme.textColor}
+              fontWeight="600"
+              opacity={isAxisAnimating ? "0.4" : "1"}
+              style={{
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {label.text}
+            </text>
+          ))}
+
+          {/* Axis overlay for highlighted axis - rendered on top */}
+          {intersectionElements.axisOverlay && (
+            <line
+              x1={intersectionElements.axisOverlay.x1}
+              y1={intersectionElements.axisOverlay.y1}
+              x2={intersectionElements.axisOverlay.x2}
+              y2={intersectionElements.axisOverlay.y2}
+              stroke={currentTheme.textColor}
+              strokeWidth="1.5"
+              strokeOpacity={isAxisAnimating ? "0.4" : "0.7"}
+              style={{
+                transition: 'all 0.2s ease',
+              }}
+            />
+          )}
         </svg>
       </div>
-
-      
-      {/* Custom Tooltip */}
-      {tooltipData && (
-        <div
-          style={{
-            position: 'fixed',
-            left: tooltipData.x,
-            top: tooltipData.y,
-            transform: 'translateX(-50%)',
-            backgroundColor: currentTheme.textColor,
-            color: currentTheme.backgroundColor,
-            padding: '12px 16px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: '500',
-            whiteSpace: 'pre-line',
-            pointerEvents: 'none',
-            zIndex: 1000,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            border: '1px solid rgba(0, 0, 0, 0.1)',
-            maxWidth: '200px',
-            wordWrap: 'break-word',
-          }}
-        >
-          {tooltipData.content.split('\n').map((line, index) => {
-            const parts = line.split('**: ');
-            if (parts.length === 2) {
-              const label = parts[0].replace('**', '');
-              const value = parts[1];
-              return (
-                <div key={index} style={{ marginBottom: index < tooltipData.content.split('\n').length - 1 ? '4px' : '0' }}>
-                  <span style={{ fontWeight: '700' }}>{label}</span>
-                  <span style={{ fontWeight: '400' }}>: {value}</span>
-                </div>
-              );
-            }
-            return <div key={index}>{line}</div>;
-          })}
-          {/* Tooltip arrow */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '-6px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 0,
-              height: 0,
-              borderLeft: '6px solid transparent',
-              borderRight: '6px solid transparent',
-              borderBottom: `6px solid ${currentTheme.textColor}`,
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 };

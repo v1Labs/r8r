@@ -2,7 +2,28 @@
 
 All notable changes to R8R will be documented in this file.
 
-## [1.0.10] - 2025-07-11
+## [1.0.11] - 2025-01-21
+
+### 🎯 Progressive Disclosure Feature
+- **Axis label interaction**: Hover or long press on axis labels to reveal detailed range information
+- **Intersection lines**: Tiny perpendicular lines appear at grid intersections (0%, 20%, 40%, 60%, 80%, 100%) when an axis is highlighted
+- **Number labels**: Each intersection shows the actual value based on the dimension's maxValue
+- **Axis overlay**: Highlighted axis gets a matching overlay line for better visual emphasis
+- **Smooth animations**: Non-jarring 200ms transitions for all progressive disclosure elements
+- **Cross-platform support**: Works on desktop (hover) and mobile (long press) devices
+- **Clean design**: Short intersection lines (10px) only on the right side of the axis for minimal visual clutter
+- **Proper layering**: All intersection elements render on top of the radar chart for clear visibility
+
+### 🎨 Icon Support for Chart Dimensions
+- **Flexible icon system**: Support for both React components and SVG strings as dimension icons
+- **Responsive sizing**: Icons automatically scale based on the `iconSize` prop (16-36px range)
+- **Dynamic positioning**: Icons positioned proportionally to their size (20px + iconSize/2 from axis)
+- **Theme integration**: Icons respect the current theme colors and styling
+- **Smart color handling**: Automatically replaces `currentColor` with theme text color
+- **Rotated label support**: Icons work seamlessly with rotated axis labels
+- **Storybook controls**: Interactive icon size testing with safety limits
+- **SVG optimization**: Proper regex handling to avoid conflicts with stroke-width attributes
+## [1.0.10] - 2025-07-20
 
 ### 🎨 Design Cleanup
 - **Removed max value labels**: Eliminated the repetitive max value labels (typically "100") from the chart axes to create a cleaner, more focused design

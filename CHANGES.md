@@ -2,6 +2,69 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.12] - 2025-01-26
+
+### 🧹 Icon Functionality Removal
+- **Removed icon system**: Eliminated the icon functionality from chart dimensions to simplify the component
+- **Removed Icons.tsx**: Deleted the dedicated Icons component file containing SVG icon definitions
+- **Simplified DataPoint interface**: Removed `icon` field from DataPoint interface for cleaner API
+- **Removed iconSize prop**: Eliminated the `iconSize` prop from R8RProps interface
+- **Cleaned up rendering logic**: Removed icon rendering code and `renderIcon` helper function
+- **Updated stories**: Removed WithIcons story and icon-related chart examples from Storybook
+- **Updated documentation**: Removed all icon-related references from README.md
+- **Streamlined codebase**: Reduced complexity by removing icon positioning and styling logic
+- **Better focus**: Component now focuses on core radar chart functionality without visual distractions
+
+### 🦄 Unicorn Theme Addition
+- **New unicorn theme**: Added magical purple/pink gradient theme with bright, vibrant colors
+- **Soft pink background**: Light pink background (`#fdf2f8`) for a gentle, whimsical feel
+- **Purple accents**: Purple grid lines (`#e9d5ff`) and borders (`#c084fc`) for magical touch
+- **Vibrant text**: Deep purple text (`#581c87`) for excellent readability and contrast
+- **Optimized color palette**: Special unicorn colors array with purple, pink, amber, and emerald tones
+- **Theme-aware colors**: Automatically uses unicorn colors when theme is set to 'unicorn'
+- **Storybook integration**: Added UnicornTheme story with magical legend title
+- **Documentation updates**: Updated README with unicorn theme examples and features
+- **Perfect for creative use cases**: Ideal for fun, whimsical, or creative data visualizations
+
+### 🎨 Enhanced Background Support
+- **Full CSS background support**: `backgroundColor` and `legendBackgroundColor` now support any valid CSS background value
+- **Gradient support**: Linear gradients, radial gradients, and complex gradient patterns
+- **Image backgrounds**: Support for background images with `url()` syntax
+- **Multiple backgrounds**: Complex background combinations with multiple layers
+- **Updated property names**: Changed from `backgroundColor` CSS property to `background` for full compatibility
+- **Enhanced documentation**: Updated prop descriptions and README with gradient examples
+- **Flexible styling**: Users can now create sophisticated visual designs with gradients and patterns
+
+### 🎨 Legend Text Color Support
+- **New legendTextColor prop**: Added `legendTextColor` property for independent legend text styling
+- **Smart fallback**: Falls back to `textColor` when `legendTextColor` is not provided
+- **Theme integration**: Supports both theme defaults and custom overrides
+- **Enhanced flexibility**: Perfect for themes with dark legends and light backgrounds
+- **Updated documentation**: Added prop documentation and usage examples
+- **Backward compatibility**: Existing themes continue to work without changes
+
+### 🎨 SVG Linear Gradient API for Dataset Colors
+- **New Gradient interface**: Added `Gradient` type with `type`, `from`, `to`, and `angle` properties
+- **ColorOrGradient type**: Union type supporting both strings (solid colors) and gradient objects
+- **SVG linear gradient support**: Proper SVG `<linearGradient>` definitions with unique IDs for dataset polygons
+- **Chart-centered gradients**: Linear gradients are oriented from the chart center to each polygon for intuitive magnitude visualization
+- **Dynamic gradient positioning**: Calculates gradient direction from chart center to polygon center, with optional user angle offset
+- **Dataset color processing**: Updated color processing to handle gradients for dataset polygons
+- **Legend color handling**: Legend indicators use the `from` color of gradients (since they're rendered with HTML/CSS)
+- **Theme integration**: Updated unicorn theme colors array to include gradient examples
+- **Backward compatibility**: String values still work for solid colors
+- **Enhanced documentation**: Added comprehensive gradient API documentation and examples
+
+### 🎨 Data Border Radius
+- **New dataBorderRadius prop**: Added support for rounded corners on dataset polygons
+- **SVG path generation**: Dynamic path creation with smooth rounded corners using quadratic Bézier curves
+- **Bidirectional radius**: Positive values create convex (outward bulging) shapes, negative values create concave (inward curving) shapes
+- **Geometric center line analysis**: For 4+ data points with positive radius, uses adjacent point relationships to prevent awkward bulging
+- **Conservative bulge constraint**: Maximum bulge limited to half the minimum distance between points and their geometric center lines
+- **Adaptive scaling**: For negative radius or < 4 points, uses center-based adaptive scaling for consistent behavior
+- **Softened design**: Creates a more modern, softer visual appearance with geometrically sound curves
+- **Backward compatibility**: Defaults to 0 (sharp corners) for existing implementations
+
 ## [1.0.11] - 2025-01-21
 
 ### 🎯 Progressive Disclosure Feature

@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import R8R from './R8R';
-import Icons from './Icons';
 
 const meta: Meta<typeof R8R> = {
   title: 'Components/R8R',
@@ -29,7 +28,7 @@ const meta: Meta<typeof R8R> = {
   argTypes: {
     theme: {
       control: { type: 'select' },
-      options: ['light', 'dark'],
+      options: ['light', 'dark', 'unicorn'],
       description: 'Theme preset for the chart',
     },
     showGrid: {
@@ -56,9 +55,9 @@ const meta: Meta<typeof R8R> = {
       control: { type: 'range', min: 0, max: 1000, step: 50 },
       description: 'Animation duration in milliseconds',
     },
-    iconSize: {
-      control: { type: 'range', min: 16, max: 36, step: 4 },
-      description: 'Size of axis icons in pixels',
+    dataBorderRadius: {
+      control: { type: 'range', min: -30, max: 30, step: 1 },
+      description: 'Border radius for dataset polygons (negative = concave, positive = convex)',
     },
   },
 };
@@ -120,61 +119,31 @@ const performanceChart = [
   { label: 'Graphics', value: 0, maxValue: 100 }
 ];
 
-// Icon examples
-const iconChart = [
-  { 
-    label: 'Speed', 
-    value: 0, 
-    maxValue: 200,
-    icon: Icons.rocket(20)
+const unicornData = [
+  {
+    label: 'Narwhal',
+    values: { 'Size': 20, 'Shape': 24, 'Has Horn': 95, 'Magical': 40, 'Color': 26 }
   },
-  { 
-    label: 'Reliability', 
-    value: 0, 
-    maxValue: 100,
-    icon: Icons.shield(20)
+  {
+    label: 'Pegasus',
+    values: { 'Size': 86, 'Shape': 84, 'Has Horn': 10, 'Magical': 90, 'Color': 95 }
   },
-  { 
-    label: 'Cost', 
-    value: 0, 
-    maxValue: 50,
-    icon: Icons.money(20)
+  {
+    label: 'Pony',
+    values: { 'Size': 55, 'Shape': 85, 'Has Horn': 10, 'Magical': 15, 'Color': 79 }
   },
-  { 
-    label: 'Ease of Use', 
-    value: 0, 
-    maxValue: 100,
-    icon: Icons.sparkles(20)
+  {
+    label: 'Dragon',
+    values: { 'Size': 5, 'Shape': 3, 'Has Horn': 60, 'Magical': 85, 'Color': 15 }
   },
-  { 
-    label: 'Support', 
-    value: 0, 
-    maxValue: 100,
-    icon: Icons.phone(20)
-  }
 ];
 
-const iconData = [
-  {
-    label: 'Product A',
-    values: {
-      'Speed': 180,
-      'Reliability': 95,
-      'Cost': 35,
-      'Ease of Use': 85,
-      'Support': 90
-    }
-  },
-  {
-    label: 'Product B',
-    values: {
-      'Speed': 120,
-      'Reliability': 88,
-      'Cost': 20,
-      'Ease of Use': 75,
-      'Support': 70
-    }
-  }
+const unicornChart = [
+  { label: 'Size', value: 0, maxValue: 100 },
+  { label: 'Shape', value: 0, maxValue: 100 },
+  { label: 'Has Horn', value: 0, maxValue: 100 },
+  { label: 'Magical', value: 0, maxValue: 100 },
+  { label: 'Color', value: 0, maxValue: 100 }
 ];
 
 export const Comparison: Story = {
@@ -189,6 +158,7 @@ export const Comparison: Story = {
     legendTitle: 'Apples vs Bananas',
     colors: ['#d62828', '#fcbf49'],
     animationDuration: 200,
+    dataBorderRadius: 0,
   },
 };
 
@@ -204,6 +174,7 @@ export const Performance: Story = {
     legendTitle: 'Server Performance',
     colors: ['#8b5cf6', '#06b6d4', '#84cc16'],
     animationDuration: 300,
+    dataBorderRadius: 0,
   },
 };
 
@@ -219,23 +190,27 @@ export const DarkTheme: Story = {
     legendTitle: 'Dark Theme Demo',
     colors: ['#10b981', '#f59e0b'],
     animationDuration: 250,
+    dataBorderRadius: 0,
   },
 };
 
-export const WithIcons: Story = {
+export const UnicornTheme: Story = {
   args: {
-    data: iconData,
-    chart: iconChart,
-    width: 600,
-    theme: 'light',
+    data: unicornData,
+    chart: unicornChart,
+    width: 500,
+    theme: 'unicorn',
     showGrid: true,
     showLabels: true,
     showLegend: true,
-    legendTitle: 'Product Comparison',
-    colors: ['#3b82f6', '#ef4444'],
-    animationDuration: 200,
-    iconSize: 20,
+    legendTitle: 'Unicorn Similarity 🦄',
+    animationDuration: 300,
+    dataBorderRadius: 15,
   },
 };
+
+
+
+
 
  

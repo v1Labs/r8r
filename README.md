@@ -14,13 +14,13 @@ R8R (pronounced "radar") is an open source, minimalist component for comparing m
 - 🔧 **TypeScript Ready** - Full TypeScript support with interfaces
 - 🎭 **Smooth Animations** - Configurable animation duration
 - 🏷️ **Flexible Labels** - Show/hide axis labels and legend titles
-- 🌙 **Theme System** - Built-in light and dark themes with custom overrides
+- 🌙 **Theme System** - Built-in light, dark, and unicorn themes with custom overrides
 - 📋 **Interactive Legend** - Toggle datasets on/off with clean visual states and highlighting
 - 🔄 **Smart Layout** - Legend automatically stacks above chart on mobile devices
 - 🎯 **Touch Optimized** - Larger touch targets and improved readability on mobile
 - 🎨 **Enhanced Highlighting** - Hover and long press interactions for dataset highlighting
 - 🎯 **Progressive Disclosure** - Hover/long press axis labels to reveal detailed range information
-- 🎨 **Icon Support** - Add visual icons to chart dimensions with responsive sizing
+
 
 ## Installation
 
@@ -99,13 +99,14 @@ npm run build
 | `data` | `Dataset[]` | **Required** | Array of datasets to display |
 | `chart` | `DataPoint[]` | **Required** | Chart structure defining the axes |
 | `width` | `number` | `400` | Width of the chart in pixels |
-| `theme` | `'light' \| 'dark'` | `'light'` | Theme preset |
-| `backgroundColor` | `string` | Theme default | Background color of the chart |
+| `theme` | `'light' \| 'dark' \| 'unicorn'` | `'light'` | Theme preset |
+| `backgroundColor` | `string` | Theme default | Background of the chart (supports any valid CSS background value) |
 | `gridColor` | `string` | Theme default | Grid line color |
 | `textColor` | `string` | Theme default | Text color for labels and legend |
-| `legendBackgroundColor` | `string` | Theme default | Legend background color |
+| `legendBackgroundColor` | `string` | Theme default | Legend background (supports any valid CSS background value) |
+| `legendTextColor` | `string` | `textColor` | Legend text color (falls back to textColor if not provided) |
 | `legendBorderColor` | `string` | Theme default | Legend border color |
-| `colors` | `string[]` | Default palette | Array of colors for datasets |
+| `colors` | `(string \| Gradient)[]` | Default palette | Array of colors for datasets (supports SVG gradients) |
 | `showGrid` | `boolean` | `true` | Whether to show grid lines |
 | `showLabels` | `boolean` | `true` | Whether to show axis labels |
 
@@ -113,7 +114,8 @@ npm run build
 | `legendTitle` | `string` | `''` | Title for the legend (empty hides title) |
 | `showBorder` | `boolean` | `true` | Whether to show border around the chart |
 | `animationDuration` | `number` | `200` | Animation duration in milliseconds |
-| `iconSize` | `number` | `32` | Size of axis icons in pixels (16-36px recommended) |
+| `dataBorderRadius` | `number` | `0` | Border radius for dataset polygons (negative = concave, positive = convex) |
+
 | `className` | `string` | `''` | Custom CSS class name |
 | `style` | `React.CSSProperties` | `{}` | Custom CSS styles |
 
@@ -124,7 +126,7 @@ interface DataPoint {
   label: string;                    // Axis label
   value: number;                    // Data value (used for maxValue calculation)
   maxValue?: number;                // Optional maximum value (defaults to 100)
-  icon?: React.ReactNode | string;  // Optional icon (React component or SVG string)
+
 }
 
 interface Dataset {
@@ -240,6 +242,130 @@ const data = [
 />
 ```
 
+### Unicorn Theme
+
+```jsx
+<R8R 
+  data={data}
+  chart={chart}
+  theme="unicorn"
+  legendTitle="Unicorn Magic ✨"
+/>
+```
+
+The unicorn theme features:
+- Soft pink background with purple accents
+- Bright, vibrant colors optimized for the theme
+- Magical gradient-inspired color palette
+- Perfect for fun, creative, or whimsical data visualizations
+
+### Advanced Background Options
+
+R8R supports any valid CSS background value, including gradients and images:
+
+```jsx
+// Gradient backgrounds
+<R8R 
+  data={data}
+  chart={chart}
+  backgroundColor="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+  legendBackgroundColor="linear-gradient(142deg, rgba(50, 16, 64, 1) 0%, rgba(84, 14, 135, 1) 100%)"
+/>
+
+// Radial gradients
+<R8R 
+  data={data}
+  chart={chart}
+  backgroundColor="radial-gradient(circle, #ff6b6b, #4ecdc4)"
+/>
+
+// Multiple backgrounds
+<R8R 
+  data={data}
+  chart={chart}
+  backgroundColor="linear-gradient(45deg, #ff6b6b, #4ecdc4), url('pattern.png')"
+/>
+
+// Different text colors for legend vs chart
+<R8R 
+  data={data}
+  chart={chart}
+  textColor="#374151"
+  legendTextColor="#ffffff"
+  legendBackgroundColor="linear-gradient(142deg, rgba(50, 16, 64, 1) 0%, rgba(84, 14, 135, 1) 100%)"
+/>
+
+### Gradient API
+
+R8R supports SVG gradients for dataset colors using a simple object API:
+
+```jsx
+// Gradient dataset colors
+<R8R 
+  data={data}
+  chart={chart}
+  colors={[
+    {
+      type: 'gradient',
+      from: '#667eea',
+      to: '#764ba2',
+      angle: 135
+    },
+    '#ec4899', // Solid color
+    {
+      type: 'gradient',
+      from: '#10b981',
+      to: '#06b6d4',
+      angle: 45
+    }
+  ]}
+/>
+
+// Simple solid colors (strings)
+<R8R 
+  data={data}
+  chart={chart}
+  colors={['#3b82f6', '#ef4444', '#10b981']}
+/>
+```
+
+**Gradient Object Properties:**
+- `type: 'gradient'` - Required to identify gradient objects
+- `from: string` - Starting color (hex, rgb, rgba, etc.)
+- `to: string` - Ending color (hex, rgb, rgba, etc.)
+- `angle?: number` - Gradient angle in degrees (defaults to 0)
+
+**Note**: Linear gradients are oriented from the chart center to each polygon, making data magnitude more visually intuitive. Legend indicators use the `from` color of gradients since they're rendered with HTML.
+
+### Data Border Radius
+
+Add rounded corners to dataset polygons for a softer design:
+
+```jsx
+// Convex (outward bulging) polygons
+<R8R 
+  data={data}
+  chart={chart}
+  dataBorderRadius={8}
+/>
+
+// Concave (inward curving) polygons
+<R8R 
+  data={data}
+  chart={chart}
+  dataBorderRadius={-8}
+/>
+
+// Sharp corners (default)
+<R8R 
+  data={data}
+  chart={chart}
+  dataBorderRadius={0}
+/>
+```
+
+**Advanced Logic**: For charts with 4+ data points and positive radius, R8R uses geometric center line analysis to prevent awkward bulging. The maximum bulge is constrained to half the minimum distance between adjacent points and their geometric center lines, ensuring smooth, visually pleasing curves.
+
 ### Custom Legend Title
 
 ```jsx
@@ -271,38 +397,7 @@ R8R supports progressive disclosure for detailed information:
 />
 ```
 
-### Icon Support
 
-Add visual icons to chart dimensions for better visual interest:
-
-```jsx
-const chart = [
-  { 
-    label: 'Speed', 
-    value: 0, 
-    maxValue: 200,
-    icon: '🚀' // Emoji
-  },
-  { 
-    label: 'Reliability', 
-    value: 0, 
-    maxValue: 100,
-    icon: '<svg>...</svg>' // SVG string
-  },
-  { 
-    label: 'Cost', 
-    value: 0, 
-    maxValue: 50,
-    icon: <MyIcon /> // React component
-  }
-];
-
-<R8R 
-  data={data}
-  chart={chart}
-  iconSize={24} // Control icon size
-/>
-```
 
 ### Mobile Responsive
 
@@ -363,7 +458,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Recent Updates
 
 - **Progressive Disclosure**: Hover/long press axis labels to reveal detailed range information
-- **Icon Support**: Add visual icons to chart dimensions with responsive sizing (16-36px)
+
 - **Smart Label Rotation**: Axis labels automatically rotate for optimal readability
 - **Enhanced Data Highlighting**: Hover and long press interactions for dataset highlighting
 - **Mobile-Friendly Interactions**: Long press (500ms) for mobile highlighting

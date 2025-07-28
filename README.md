@@ -4,23 +4,9 @@ A modern, zero-dependency radar (spider) chart for visual comparisons in React.
 
 R8R (pronounced "radar") is an open source, minimalist component for comparing multiple data sets across up to 10 customizable dimensions, visualized as an intuitive radar (spider) chart. R8R helps users spot strengths, gaps, and trade-offs at a glance.
 
-## Features
+## Live Demo
 
-- 🎯 **Zero Dependencies** - Pure React with no external chart libraries
-- 📊 **Multiple Dataset Support** - Compare unlimited datasets with automatic color cycling
-- 🎨 **Fully Customizable** - Colors, themes, sizes, animations, and styling
-- 📱 **Responsive Design** - Automatically adapts to container size and mobile devices
-- ⚡ **Performance Optimized** - Uses React hooks efficiently with ResizeObserver
-- 🔧 **TypeScript Ready** - Full TypeScript support with interfaces
-- 🎭 **Smooth Animations** - Configurable animation duration
-- 🏷️ **Flexible Labels** - Show/hide axis labels and legend titles
-- 🌙 **Theme System** - Built-in light, dark, and unicorn themes with custom overrides
-- 📋 **Interactive Legend** - Toggle datasets on/off with clean visual states and highlighting
-- 🔄 **Smart Layout** - Legend automatically stacks above chart on mobile devices
-- 🎯 **Touch Optimized** - Larger touch targets and improved readability on mobile
-- 🎨 **Enhanced Highlighting** - Hover and long press interactions for dataset highlighting
-- 🎯 **Progressive Disclosure** - Hover/long press axis labels to reveal detailed range information
-
+For interactive examples and demos, visit the [R8R Storybook demo](https://r8r.v1labs.com/).
 
 ## Installation
 
@@ -71,90 +57,25 @@ function App() {
 }
 ```
 
-## Live Demo
+## Features
 
-For interactive examples and demos, visit the [R8R Storybook demo](https://r8r.v1labs.com/).
-
-## Development
-
-This project uses Storybook for component development and testing. To run the development environment:
-
-```bash
-# Install dependencies
-npm install
-
-# Start Storybook
-npm run storybook
-
-# Build the component
-npm run build
-```
-
-## API Reference
-
-### Props
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `data` | `Dataset[]` | **Required** | Array of datasets to display |
-| `chart` | `DataPoint[]` | **Required** | Chart structure defining the axes |
-| `width` | `number` | `400` | Width of the chart in pixels |
-| `theme` | `'light' \| 'dark' \| 'unicorn'` | `'light'` | Theme preset |
-| `backgroundColor` | `string` | Theme default | Background of the chart (supports any valid CSS background value) |
-| `gridColor` | `string` | Theme default | Grid line color |
-| `textColor` | `string` | Theme default | Text color for labels and legend |
-| `legendBackgroundColor` | `string` | Theme default | Legend background (supports any valid CSS background value) |
-| `legendTextColor` | `string` | `textColor` | Legend text color (falls back to textColor if not provided) |
-| `legendBorderColor` | `string` | Theme default | Legend border color |
-| `colors` | `(string \| Gradient)[]` | Default palette | Array of colors for datasets (supports SVG gradients) |
-| `showGrid` | `boolean` | `true` | Whether to show grid lines |
-| `showLabels` | `boolean` | `true` | Whether to show axis labels |
-
-| `showLegend` | `boolean` | `true` | Whether to show legend |
-| `legendTitle` | `string` | `''` | Title for the legend (empty hides title) |
-| `showBorder` | `boolean` | `true` | Whether to show border around the chart |
-| `animationDuration` | `number` | `200` | Animation duration in milliseconds |
-| `dataBorderRadius` | `number` | `0` | Border radius for dataset polygons (negative = concave, positive = convex) |
-
-| `className` | `string` | `''` | Custom CSS class name |
-| `style` | `React.CSSProperties` | `{}` | Custom CSS styles |
-
-### Interfaces
-
-```typescript
-interface DataPoint {
-  label: string;                    // Axis label
-  value: number;                    // Data value (used for maxValue calculation)
-  maxValue?: number;                // Optional maximum value (defaults to 100)
-
-}
-
-interface Dataset {
-  label: string;                    // Dataset name
-  values: Record<string, number>;   // Values mapped to chart labels
-  color?: string;                   // Optional custom color for this dataset
-}
-```
-
-## Responsive Design
-
-R8R automatically adapts to different screen sizes and container constraints:
-
-### Desktop Layout
-- Chart and legend display side-by-side
-- Legend positioned to the right of the chart
-- Optimized for larger screens and mouse interaction
-
-### Mobile Layout (≤450px width)
-- Legend automatically moves above the chart
-- Larger touch targets and improved readability
-- Optimized font sizes and spacing for mobile devices
-- Horizontal legend layout with wrapping
-
-### Smart Sizing
-- Automatically uses container width when smaller than specified width
-- Maintains aspect ratio and readability across all screen sizes
-- ResizeObserver integration for real-time container size detection
+- 🎯 **Zero Dependencies** - Pure React with no external chart libraries
+- 📊 **Multiple Dataset Support** - Compare unlimited datasets with automatic color cycling
+- 🎨 **Fully Customizable** - Colors, themes, sizes, animations, and styling
+- 📱 **Responsive Design** - Automatically adapts to container size and mobile devices
+- ⚡ **Performance Optimized** - Uses React hooks efficiently with ResizeObserver
+- 🔧 **TypeScript Ready** - Full TypeScript support with interfaces
+- 🎭 **Smooth Animations** - Configurable animation duration
+- 🏷️ **Flexible Labels** - Show/hide axis labels and legend titles
+- 🌙 **Theme System** - Built-in light, dark, unicorn, and retro themes with custom overrides
+- 📋 **Interactive Legend** - Toggle datasets on/off with clean visual states and highlighting
+- 🔄 **Smart Layout** - Legend automatically stacks above chart on mobile devices
+- 🎯 **Touch Optimized** - Larger touch targets and improved readability on mobile
+- 🎨 **Enhanced Highlighting** - Hover and long press interactions for dataset highlighting
+- 🎯 **Progressive Disclosure** - Hover/long press axis labels to reveal detailed range information
+- 🎯 **Bring to Front** - Click legend labels to bring polygons to the top of the chart
+- 🎨 **Retro Theme** - 70s Colorado-inspired theme with vibrant colors and dark brown legend
+- 🎯 **3-Way Toggle** - Click to cycle through inactive → active → highlighted states
 
 ## Examples
 
@@ -229,7 +150,9 @@ const data = [
 />
 ```
 
-### Dark Theme with Custom Colors
+### Theme Examples
+
+#### Dark Theme with Custom Colors
 
 ```jsx
 <R8R 
@@ -242,7 +165,7 @@ const data = [
 />
 ```
 
-### Unicorn Theme
+#### Unicorn Theme
 
 ```jsx
 <R8R 
@@ -259,7 +182,27 @@ The unicorn theme features:
 - Magical gradient-inspired color palette
 - Perfect for fun, creative, or whimsical data visualizations
 
-### Advanced Background Options
+#### Retro Theme
+
+```jsx
+<R8R 
+  data={data}
+  chart={chart}
+  theme="retro"
+  legendTitle="Retro Vibes 🎸"
+/>
+```
+
+The retro theme features:
+- Light cream background with brown accents
+- Dark brown legend with light cream text for excellent contrast
+- Vibrant oranges, reds, yellows, teals, and blues
+- 70s Colorado-inspired color palette
+- Perfect for vintage, nostalgic, or retro-themed visualizations
+
+### Advanced Styling
+
+#### Gradient Backgrounds
 
 R8R supports any valid CSS background value, including gradients and images:
 
@@ -294,8 +237,9 @@ R8R supports any valid CSS background value, including gradients and images:
   legendTextColor="#ffffff"
   legendBackgroundColor="linear-gradient(142deg, rgba(50, 16, 64, 1) 0%, rgba(84, 14, 135, 1) 100%)"
 />
+```
 
-### Gradient API
+#### Gradient Dataset Colors
 
 R8R supports SVG gradients for dataset colors using a simple object API:
 
@@ -337,7 +281,7 @@ R8R supports SVG gradients for dataset colors using a simple object API:
 
 **Note**: Linear gradients are oriented from the chart center to each polygon, making data magnitude more visually intuitive. Legend indicators use the `from` color of gradients since they're rendered with HTML.
 
-### Data Border Radius
+#### Data Border Radius
 
 Add rounded corners to dataset polygons for a softer design:
 
@@ -366,7 +310,9 @@ Add rounded corners to dataset polygons for a softer design:
 
 **Advanced Logic**: For charts with 4+ data points and positive radius, R8R uses geometric center line analysis to prevent awkward bulging. The maximum bulge is constrained to half the minimum distance between adjacent points and their geometric center lines, ensuring smooth, visually pleasing curves.
 
-### Custom Legend Title
+### Interactive Features
+
+#### Custom Legend Title
 
 ```jsx
 <R8R 
@@ -377,7 +323,7 @@ Add rounded corners to dataset polygons for a softer design:
 />
 ```
 
-### Progressive Disclosure
+#### Progressive Disclosure
 
 R8R supports progressive disclosure for detailed information:
 
@@ -397,9 +343,7 @@ R8R supports progressive disclosure for detailed information:
 />
 ```
 
-
-
-### Mobile Responsive
+#### Mobile Responsive
 
 R8R automatically adapts to mobile devices:
 
@@ -419,6 +363,69 @@ R8R automatically adapts to mobile devices:
 />
 ```
 
+## API Reference
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `Dataset[]` | **Required** | Array of datasets to display |
+| `chart` | `DataPoint[]` | **Required** | Chart structure defining the axes |
+| `width` | `number` | `400` | Width of the chart in pixels |
+| `theme` | `'light' \| 'dark' \| 'unicorn' \| 'retro'` | `'light'` | Theme preset |
+| `backgroundColor` | `string` | Theme default | Background of the chart (supports any valid CSS background value) |
+| `gridColor` | `string` | Theme default | Grid line color |
+| `textColor` | `string` | Theme default | Text color for labels and legend |
+| `legendBackgroundColor` | `string` | Theme default | Legend background (supports any valid CSS background value) |
+| `legendTextColor` | `string` | `textColor` | Legend text color (falls back to textColor if not provided) |
+| `legendBorderColor` | `string` | Theme default | Legend border color |
+| `colors` | `(string \| Gradient)[]` | Default palette | Array of colors for datasets (supports SVG gradients) |
+| `showGrid` | `boolean` | `true` | Whether to show grid lines |
+| `showLabels` | `boolean` | `true` | Whether to show axis labels |
+| `showLegend` | `boolean` | `true` | Whether to show legend |
+| `legendTitle` | `string` | `''` | Title for the legend (empty hides title) |
+| `showBorder` | `boolean` | `true` | Whether to show border around the chart |
+| `animationDuration` | `number` | `200` | Animation duration in milliseconds |
+| `dataBorderRadius` | `number` | `0` | Border radius for dataset polygons (negative = concave, positive = convex) |
+| `className` | `string` | `''` | Custom CSS class name |
+| `style` | `React.CSSProperties` | `{}` | Custom CSS styles |
+
+### Interfaces
+
+```typescript
+interface DataPoint {
+  label: string;                    // Axis label
+  value: number;                    // Data value (used for maxValue calculation)
+  maxValue?: number;                // Optional maximum value (defaults to 100)
+}
+
+interface Dataset {
+  label: string;                    // Dataset name
+  values: Record<string, number>;   // Values mapped to chart labels
+  color?: string;                   // Optional custom color for this dataset
+}
+```
+
+## Responsive Design
+
+R8R automatically adapts to different screen sizes and container constraints:
+
+### Desktop Layout
+- Chart and legend display side-by-side
+- Legend positioned to the right of the chart
+- Optimized for larger screens and mouse interaction
+
+### Mobile Layout (≤450px width)
+- Legend automatically moves above the chart
+- Larger touch targets and improved readability
+- Optimized font sizes and spacing for mobile devices
+- Horizontal legend layout with wrapping
+
+### Smart Sizing
+- Automatically uses container width when smaller than specified width
+- Maintains aspect ratio and readability across all screen sizes
+- ResizeObserver integration for real-time container size detection
+
 ## Browser Support
 
 - React 16.8+ (for hooks support)
@@ -427,18 +434,17 @@ R8R automatically adapts to mobile devices:
 
 ## Development
 
+This project uses Storybook for component development and testing. To run the development environment:
+
 ```bash
 # Install dependencies
 npm install
 
-# Start development mode
-npm run dev
+# Start Storybook
+npm run storybook
 
-# Build for production
+# Build the component
 npm run build
-
-# Clean build directory
-npm run clean
 ```
 
 ## Contributing
@@ -458,7 +464,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Recent Updates
 
 - **Progressive Disclosure**: Hover/long press axis labels to reveal detailed range information
-
 - **Smart Label Rotation**: Axis labels automatically rotate for optimal readability
 - **Enhanced Data Highlighting**: Hover and long press interactions for dataset highlighting
 - **Mobile-Friendly Interactions**: Long press (500ms) for mobile highlighting

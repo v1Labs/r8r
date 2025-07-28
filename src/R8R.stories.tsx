@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import R8R from './R8R';
+import R8R, { Dataset } from './R8R';
 
 const meta: Meta<typeof R8R> = {
   title: 'Components/R8R',
@@ -73,50 +73,51 @@ const comparisonChart = [
   { label: 'Health', value: 0, maxValue: 100 }
 ];
 
-const comparisonData = [
+const comparisonData: Dataset[] = [
   {
     label: 'Apples',
     values: {
       'Size': 55,
-      'Color': 80,
-      'Cost': 24,
-      'Taste': 29,
-      'Health': 41
-    }
+      'Color': 85,
+      'Cost': 30,
+      'Taste': 38,
+      'Health': 55
+    },
+    status: 'active'
   },
   {
     label: 'Bananas',
     values: {
-      'Size': 40,
+      'Size': 35,
       'Color': 20,
       'Cost': 70,
-      'Taste': 68,
-      'Health': 60
-    }
-  }
-];
-
-const performanceData = [
-  {
-    label: 'Server A',
-    values: { 'CPU': 85, 'Memory': 92, 'Storage': 45, 'Network': 95, 'Graphics': 30 }
+      'Taste': 78,
+      'Health': 75
+    },
+    status: 'active'
   },
   {
-    label: 'Server B',
-    values: { 'CPU': 65, 'Memory': 75, 'Storage': 90, 'Network': 60, 'Graphics': 85 }
+    label: 'Mangos',
+    values: {
+      'Size': 49,
+      'Color': 60,
+      'Cost': 88,
+      'Taste': 95,
+      'Health': 50
+    },
+    status: 'inactive'
   },
   {
-    label: 'Server C',
-    values: { 'CPU': 95, 'Memory': 55, 'Storage': 70, 'Network': 80, 'Graphics': 40 }
+    label: 'Watermelons',
+    values: {
+      'Size': 90,
+      'Color': 50,
+      'Cost': 20,
+      'Taste': 40,
+      'Health': 30
+    },
+    status: 'inactive'
   }
-];
-
-const performanceChart = [
-  { label: 'CPU', value: 0, maxValue: 100 },
-  { label: 'Memory', value: 0, maxValue: 100 },
-  { label: 'Storage', value: 0, maxValue: 100 },
-  { label: 'Network', value: 0, maxValue: 100 },
-  { label: 'Graphics', value: 0, maxValue: 100 }
 ];
 
 const unicornData = [
@@ -146,6 +147,45 @@ const unicornChart = [
   { label: 'Color', value: 0, maxValue: 100 }
 ];
 
+const darkThemeData: Dataset[] = [
+  {
+    label: 'Vampire',
+    values: { 'Fangs': 80, 'Claws': 25, 'Weapons': 30, 'Armor': 20, 'Treasure': 40, 'Speed': 80, 'Strength': 70, 'Intelligence': 75 },
+    status: 'active'
+  },
+  {
+    label: 'Zombie',
+    values: { 'Fangs': 40, 'Claws': 20, 'Weapons': 5, 'Armor': 5, 'Treasure': 5, 'Speed': 40, 'Strength': 55, 'Intelligence': 5 },
+    status: 'inactive'
+  },
+  {
+    label: 'Werewolf',
+    values: { 'Fangs': 90, 'Claws': 80, 'Weapons': 10, 'Armor': 20, 'Treasure': 10, 'Speed': 85, 'Strength': 80, 'Intelligence': 25 },
+    status: 'inactive'
+  },
+  {
+    label: 'Dragon',
+    values: { 'Fangs': 90, 'Claws': 90, 'Weapons': 10, 'Armor': 80, 'Treasure': 90, 'Speed': 75, 'Strength': 90, 'Intelligence': 80 },
+    status: 'active'
+  },
+  {
+    label: 'Goblin',
+    values: { 'Fangs': 15, 'Claws': 15, 'Weapons': 30, 'Armor': 30, 'Treasure': 20, 'Speed': 50, 'Strength': 40, 'Intelligence': 25 },
+    status: 'inactive'
+  },
+];
+
+const darkThemeChart = [
+  { label: 'Fangs', value: 0, maxValue: 100 },
+  { label: 'Claws', value: 0, maxValue: 100 },
+  { label: 'Weapons', value: 0, maxValue: 100 },
+  { label: 'Armor', value: 0, maxValue: 100 },
+  { label: 'Treasure', value: 0, maxValue: 100 },
+  { label: 'Speed', value: 0, maxValue: 100 },
+  { label: 'Strength', value: 0, maxValue: 100 },
+  { label: 'Intelligence', value: 0, maxValue: 100 }
+];
+
 export const Comparison: Story = {
   args: {
     data: comparisonData,
@@ -155,42 +195,25 @@ export const Comparison: Story = {
     showGrid: true,
     showLabels: true,
     showLegend: true,
-    legendTitle: 'Apples vs Bananas',
-    colors: ['#d62828', '#fcbf49'],
+    legendTitle: 'Fruit Comparison',
+    colors: ['#d62828', '#fcbf49', '#f77f00', '#6a994e'],
     animationDuration: 200,
-    dataBorderRadius: 0,
-  },
-};
-
-export const Performance: Story = {
-  args: {
-    data: performanceData,
-    chart: performanceChart,
-    width: 600,
-    theme: 'light',
-    showGrid: true,
-    showLabels: true,
-    showLegend: true,
-    legendTitle: 'Server Performance',
-    colors: ['#8b5cf6', '#06b6d4', '#84cc16'],
-    animationDuration: 300,
-    dataBorderRadius: 0,
+    dataBorderRadius: 5,
   },
 };
 
 export const DarkTheme: Story = {
   args: {
-    data: comparisonData,
-    chart: comparisonChart,
-    width: 500,
+    data: darkThemeData,
+    chart: darkThemeChart,
+    width: 600,
     theme: 'dark',
     showGrid: true,
     showLabels: true,
     showLegend: true,
-    legendTitle: 'Dark Theme Demo',
-    colors: ['#10b981', '#f59e0b'],
+    legendTitle: 'Monsters',
     animationDuration: 250,
-    dataBorderRadius: 0,
+    dataBorderRadius: 15,
   },
 };
 
@@ -209,6 +232,20 @@ export const UnicornTheme: Story = {
   },
 };
 
+export const RetroTheme: Story = {
+  args: {
+    data: comparisonData,
+    chart: comparisonChart,
+    width: 500,
+    theme: 'retro',
+    showGrid: true,
+    showLabels: true,
+    showLegend: true,
+    legendTitle: 'Retro Theme',
+    animationDuration: 300,
+    dataBorderRadius: 8,
+  },
+};
 
 
 

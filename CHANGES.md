@@ -2,6 +2,48 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.13] - 2025-01-27
+
+### 🎯 Enhanced Dataset State Management
+- **Improved inactive state behavior**: Inactive datasets are now completely hidden from the chart instead of showing as gray lines
+- **Cleaner visual focus**: Only active and highlighted datasets are rendered on the chart for better data focus
+- **Simplified state logic**: Removed complex grayscale conversion and opacity calculations for inactive datasets
+- **Better user experience**: Clicking legend items now toggles between completely hidden (inactive) and visible (active) states
+- **Consistent legend behavior**: Legend still shows all datasets with appropriate styling, but inactive datasets don't appear on the chart
+- **Streamlined rendering**: Active datasets show as outlines only, highlighted datasets show as outlines with fill
+- **Reduced visual clutter**: Eliminates distracting gray lines that made it harder to focus on active datasets
+
+### 🎨 Enhanced Retro Theme
+- **Vibrant color palette**: Updated with bright oranges, reds, yellows, teals, and blues for maximum visual impact
+- **Dark brown legend**: Rich dark brown legend background (`#5d4e37`) with light cream text (`#f5f1e8`) for excellent contrast
+- **Earthy background**: Light cream background (`#f5f1e8`) for a warm, vintage feel
+- **Brown accents**: Brown grid lines (`#8b7355`) and borders for authentic retro styling
+- **Improved visibility**: Darker yellow colors for better readability on the light background
+- **Theme-aware colors**: Automatically uses vibrant retro colors when theme is set to 'retro'
+- **Storybook integration**: Updated RetroTheme story with enhanced color scheme
+- **Perfect for vintage use cases**: Ideal for retro-themed dashboards, vintage presentations, or nostalgic data visualizations
+
+### 🎯 Enhanced Dataset Interaction
+- **3-way toggle system**: Clicking legend items or chart polygons now cycles through inactive → active → highlighted → inactive
+- **Removed hover highlighting**: Eliminated hover-based highlighting in favor of explicit click-based control
+- **Better user control**: Users can now precisely control dataset states through simple clicks
+- **Simplified interaction model**: No more confusion between hover and click behaviors
+- **Consistent behavior**: Both legend items and chart polygons use the same 3-way toggle logic
+- **Improved accessibility**: Clear, predictable interaction pattern that works well on both desktop and mobile
+- **Enhanced user experience**: Users can easily cycle through states to find the perfect visualization combination
+
+### 🎯 Bring to Front Legend Reordering
+- **Click to bring to front**: Click any legend label to bring its polygon to the top of the chart
+- **Labels stay in place**: No visual confusion from moving labels around
+- **Polygon stacking control**: Separate polygon order state controls SVG rendering order
+- **Immediate feedback**: Polygon moves to front instantly when label is clicked
+- **State preservation**: Dataset states (inactive/active/highlighted) are preserved during reordering
+- **Color preservation**: Dataset colors are preserved with their associated polygons
+- **Simple interaction**: No complex drag and drop, just direct click-to-front behavior
+- **Zero dependencies**: Pure React implementation using state management
+- **Cross-platform support**: Works seamlessly on desktop (mouse) and mobile (touch) devices
+- **Clean codebase**: Removed all drag and drop related code for simpler maintenance
+
 ## [1.0.12] - 2025-01-26
 
 ### 🧹 Icon Functionality Removal

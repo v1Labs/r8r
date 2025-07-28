@@ -31,8 +31,8 @@ export interface R8RProps {
   chart: DataPoint[];
   /** Width of the chart in pixels */
   width?: number;
-  /** Theme preset ('light' | 'dark' | 'unicorn') */
-  theme?: 'light' | 'dark' | 'unicorn';
+  /** Theme preset ('light' | 'dark' | 'unicorn' | 'retro') */
+  theme?: 'light' | 'dark' | 'unicorn' | 'retro';
   /** Background of the chart (supports any valid CSS background value) */
   backgroundColor?: string;
   /** Grid line color */
@@ -67,6 +67,7 @@ export interface R8RProps {
   className?: string;
   /** Custom CSS styles */
   style?: React.CSSProperties;
+
 }
 
 // Predefined themes
@@ -100,6 +101,14 @@ const themes: Record<string, {
     legendBorderColor: '#F598D3',
     legendTextColor: '#ffffffdd',
   },
+  retro: {
+    backgroundColor: '#f5f1e8',
+    gridColor: '#8b7355',
+    textColor: '#4a3c2a',
+    legendBackgroundColor: '#5d4e37',
+    legendBorderColor: '#8b7355',
+    legendTextColor: '#f5f1e8',
+  },
 };
 
 // Default colors for datasets
@@ -128,6 +137,20 @@ const unicornColors = [
   '#84cc16', // lime
   '#ef4444', // red
   '#8b5cf6', // violet
+];
+
+// Retro theme colors (70s Colorado inspired - vibrant)
+const retroColors = [
+  '#ff6b35', // vibrant orange
+  '#f7931e', // bright amber
+  '#e6b800', // darker golden yellow
+  '#d62828', // bright red
+  '#f77f00', // deep orange
+  '#d4a017', // darker warm yellow
+  '#e76f51', // coral red
+  '#2a9d8f', // teal green
+  '#264653', // deep blue-green
+  '#b8860b', // darker warm gold
 ];
 
 // Helper function to process colors and gradients
@@ -213,7 +236,7 @@ const R8R: React.FC<R8RProps> = ({
   legendBackgroundColor,
   legendTextColor,
   legendBorderColor,
-  colors = theme === 'unicorn' ? unicornColors : defaultColors,
+  colors = theme === 'unicorn' ? unicornColors : theme === 'retro' ? retroColors : defaultColors,
   showGrid = true,
   showLabels = true,
   showLegend = true,
@@ -240,6 +263,8 @@ const R8R: React.FC<R8RProps> = ({
   const [hoveredDataset, setHoveredDataset] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [localData, setLocalData] = useState<Dataset[]>(data);
+  const [localColors, setLocalColors] = useState<(string | Gradient)[]>(colors);
 
   const [highlightedAxis, setHighlightedAxis] = useState<number | null>(null);
   const [axisLongPressTimer, setAxisLongPressTimer] = useState<NodeJS.Timeout | null>(null);
@@ -369,17 +394,28 @@ const R8R: React.FC<R8RProps> = ({
     }
   }, [data, chart]);
 
-  // Update dataset states when data changes
-  useEffect(() => {
-    const newStates = new Map();
-    data.forEach((dataset, index) => {
-      const existingState = datasetStates.get(index);
-      newStates.set(index, {
-        status: dataset.status || existingState?.status || 'active'
+      // Update dataset states when data changes
+    useEffect(() => {
+      const newStates = new Map();
+      const currentData = localData;
+      currentData.forEach((dataset, index) => {
+        const existingState = datasetStates.get(index);
+        newStates.set(index, {
+          status: dataset.status || existingState?.status || 'active'
+        });
       });
-    });
-    setDatasetStates(newStates);
+      setDatasetStates(newStates);
+    }, [data, localData]);
+
+  // Sync localData with data prop when it changes
+  useEffect(() => {
+    setLocalData(data);
   }, [data]);
+
+  // Sync localColors with colors prop when it changes
+  useEffect(() => {
+    setLocalColors(colors);
+  }, [colors]);
 
   // Calculate chart dimensions and positioning
   const chartConfig = useMemo(() => {
@@ -450,26 +486,29 @@ const R8R: React.FC<R8RProps> = ({
 
 
 
-  // Process dataset colors and gradients
-  const processedDatasetColors = useMemo(() => {
-    const { centerX, centerY } = chartConfig;
-    const chartCenter = { x: centerX, y: centerY };
-    
-    return data.map((dataset, index) => {
-      const colorOrGradient = dataset.color || colors[index % colors.length];
-      return processColorOrGradient(colorOrGradient, '#3b82f6', chartCenter);
-    });
-  }, [data, colors, chartConfig]);
+      // Process dataset colors and gradients
+    const processedDatasetColors = useMemo(() => {
+      const { centerX, centerY } = chartConfig;
+      const chartCenter = { x: centerX, y: centerY };
+      const currentData = localData;
+      const currentColors = localColors;
 
-  // Generate all dataset points
-  const allDatasetPoints = useMemo(() => {
-    return data.map((dataset, index) => ({
-      dataset,
-      points: calculatePoints(dataset, processedDatasetColors[index].fill),
-      color: processedDatasetColors[index],
-      index,
-    }));
-  }, [data, chart, processedDatasetColors, chartConfig]);
+      return currentData.map((dataset, index) => {
+        const colorOrGradient = dataset.color || currentColors[index % currentColors.length];
+        return processColorOrGradient(colorOrGradient, '#3b82f6', chartCenter);
+      });
+    }, [localData, localColors, chartConfig]);
+
+      // Generate all dataset points
+    const allDatasetPoints = useMemo(() => {
+      const currentData = localData;
+      return currentData.map((dataset, index) => ({
+        dataset,
+        points: calculatePoints(dataset, processedDatasetColors[index].fill),
+        color: processedDatasetColors[index],
+        index,
+      }));
+    }, [localData, chart, processedDatasetColors, chartConfig]);
 
 
 
@@ -708,14 +747,28 @@ const R8R: React.FC<R8RProps> = ({
 
 
 
-  // Toggle dataset status between active and inactive
+  // Toggle dataset status through 3-way cycle: inactive -> active -> highlighted
   const toggleDataset = (index: number) => {
     const newStates = new Map(datasetStates);
     const currentState = newStates.get(index);
     if (!currentState) return;
     
-    // Toggle between active and inactive (skip hidden for now)
-    const newStatus = currentState.status === 'active' || currentState.status === 'highlighted' ? 'inactive' : 'active';
+    // Cycle through: inactive -> active -> highlighted -> inactive
+    let newStatus: 'inactive' | 'active' | 'highlighted';
+    switch (currentState.status) {
+      case 'inactive':
+        newStatus = 'active';
+        break;
+      case 'active':
+        newStatus = 'highlighted';
+        break;
+      case 'highlighted':
+        newStatus = 'inactive';
+        break;
+      default:
+        newStatus = 'active';
+    }
+    
     newStates.set(index, {
       status: newStatus
     });
@@ -726,27 +779,13 @@ const R8R: React.FC<R8RProps> = ({
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [longPressedDataset, setLongPressedDataset] = useState<number | null>(null);
 
-  const handleMouseDown = (index: number) => {
-    // Only allow long press on active datasets
-    const currentState = datasetStates.get(index);
-    if (!currentState || currentState.status !== 'active') return;
+  // Polygon stacking order management
+  const [polygonOrder, setPolygonOrder] = useState<number[]>([]);
 
-    // Start long press timer
+  const handleMouseDown = (index: number) => {
+    // Start long press timer for potential future features
     const timer = setTimeout(() => {
       setLongPressedDataset(index);
-      
-      const newStates = new Map(datasetStates);
-      
-      // Clear any existing highlights
-      newStates.forEach((state, stateIndex) => {
-        if (state.status === 'highlighted') {
-          newStates.set(stateIndex, { status: 'active' });
-        }
-      });
-      
-      // Highlight the current dataset
-      newStates.set(index, { status: 'highlighted' });
-      setDatasetStates(newStates);
     }, 500); // 500ms long press delay
 
     setLongPressTimer(timer);
@@ -767,23 +806,6 @@ const R8R: React.FC<R8RProps> = ({
 
   const handleMouseEnter = (index: number) => {
     setHoveredDataset(index);
-    
-    // Only highlight if the dataset is active
-    const currentState = datasetStates.get(index);
-    if (currentState && currentState.status === 'active') {
-      const newStates = new Map(datasetStates);
-      
-      // Clear any existing highlights
-      newStates.forEach((state, stateIndex) => {
-        if (state.status === 'highlighted') {
-          newStates.set(stateIndex, { status: 'active' });
-        }
-      });
-      
-      // Highlight the current dataset
-      newStates.set(index, { status: 'highlighted' });
-      setDatasetStates(newStates);
-    }
   };
 
   const handleMouseLeave = (index: number) => {
@@ -794,27 +816,38 @@ const R8R: React.FC<R8RProps> = ({
     }
     
     setHoveredDataset(null);
-    
-    // Only remove highlight if it wasn't a long press
-    if (longPressedDataset !== index) {
-      const currentState = datasetStates.get(index);
-      if (currentState && currentState.status === 'highlighted') {
-        const newStates = new Map(datasetStates);
-        newStates.set(index, { status: 'active' });
-        setDatasetStates(newStates);
-      }
-    }
   };
 
   const handleClick = (index: number) => {
-    // If this was a long press, don't toggle
+    // Clear long press state if it was set
     if (longPressedDataset === index) {
       setLongPressedDataset(null);
-      return;
     }
     
-    // Regular click behavior - toggle dataset
+    // Toggle dataset through 3-way cycle
     toggleDataset(index);
+    handleMoveToTop(index);
+  };
+
+  // Move to top handlers
+  const handleMoveToTop = (index: number) => {
+    // Use local data for polygon ordering
+    const currentData = localData;
+    
+    // Bring polygon to front (labels stay in place)
+    const currentOrder = polygonOrder.length > 0 ? polygonOrder : Array.from({ length: currentData.length }, (_, i) => i);
+    const newOrder = [...currentOrder];
+    
+    // Remove the clicked index from its current position
+    const currentIndex = newOrder.indexOf(index);
+    if (currentIndex > -1) {
+      newOrder.splice(currentIndex, 1);
+    }
+    
+    // Add it to the front (top of stack)
+    newOrder.unshift(index);
+    
+    setPolygonOrder(newOrder);
   };
 
   // Axis interaction handlers
@@ -1016,23 +1049,30 @@ const R8R: React.FC<R8RProps> = ({
                   {legendTitle}
                 </h3>
               )}
-              <div style={{
-                display: 'flex',
-                flexDirection: chartConfig.shouldStackLegend ? 'row' : 'column',
-                flexWrap: chartConfig.shouldStackLegend ? 'wrap' : 'nowrap',
-                justifyContent: chartConfig.shouldStackLegend ? 'center' : 'flex-start',
-                alignItems: chartConfig.shouldStackLegend ? 'center' : 'stretch',
-                gap: chartConfig.shouldStackLegend ? '6px' : '8px',
-              }}>
+              <div 
+                data-legend-container
+                style={{
+                  display: 'flex',
+                  flexDirection: chartConfig.shouldStackLegend ? 'row' : 'column',
+                  flexWrap: chartConfig.shouldStackLegend ? 'wrap' : 'nowrap',
+                  justifyContent: chartConfig.shouldStackLegend ? 'center' : 'flex-start',
+                  alignItems: chartConfig.shouldStackLegend ? 'center' : 'stretch',
+                  gap: chartConfig.shouldStackLegend ? '6px' : '8px',
+                  position: 'relative',
+                }}
+              >
+
                 {allDatasetPoints.map(({ dataset, color, index }) => {
                   const datasetState = datasetStates.get(index);
                   if (!datasetState || datasetState.status === 'hidden') return null;
                   
                   const isActive = datasetState.status === 'active' || datasetState.status === 'highlighted';
                   const isHighlighted = datasetState.status === 'highlighted';
+                  const isInactive = datasetState.status === 'inactive';
                   const isHovered = hoveredDataset === index;
                   // For legend indicators, use the 'from' color if it's a gradient, otherwise use the fill
-                  const originalColor = dataset.color || colors[index % colors.length];
+                  const currentColors = localColors;
+                  const originalColor = dataset.color || currentColors[index % currentColors.length];
                   const legendColor = typeof originalColor === 'object' && originalColor.type === 'gradient' ? originalColor.from : color.fill;
                   const displayColor = getDatasetColor(index, legendColor);
                   const isVerySmallScreen = chartConfig.actualWidth <= 480;
@@ -1040,12 +1080,18 @@ const R8R: React.FC<R8RProps> = ({
                   return (
                     <div
                       key={index}
+                      data-legend-item
+                      data-index={index}
                       onClick={() => handleClick(index)}
-                      onMouseDown={() => handleMouseDown(index)}
+                      onMouseDown={(e) => {
+                        handleMouseDown(index);
+                      }}
                       onMouseUp={() => handleMouseUp(index)}
                       onMouseEnter={() => handleMouseEnter(index)}
                       onMouseLeave={() => handleMouseLeave(index)}
-                      onTouchStart={() => handleTouchStart(index)}
+                      onTouchStart={(e) => {
+                        handleTouchStart(index);
+                      }}
                       onTouchEnd={() => handleTouchEnd(index)}
                       onTouchCancel={() => handleTouchCancel(index)}
                       style={{
@@ -1056,7 +1102,7 @@ const R8R: React.FC<R8RProps> = ({
                         fontSize: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '12px' : '13px') : '12px',
                         color: currentTheme.legendTextColor,
                         opacity: isActive ? 1 : 0.4,
-                        padding: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '3px 6px' : '4px 8px') : '4px 8px',
+                        padding: chartConfig.shouldStackLegend ? (isVerySmallScreen ? '3px 6px' : '4px 8px') : '4px 0px 4px 8px',
                         borderRadius: '4px',
                         backgroundColor: isActive ? (isHighlighted ? `${displayColor}99` : `${displayColor}33`) : 'transparent',
                         border: `1px solid ${isActive ? displayColor : 'transparent'}`,
@@ -1067,6 +1113,8 @@ const R8R: React.FC<R8RProps> = ({
                         userSelect: 'none', // Prevent text selection during long press
                         WebkitUserSelect: 'none', // For Safari
                         MozUserSelect: 'none', // For Firefox
+                        transform: 'none',
+                        zIndex: 'auto',
                       }}
                     >
                       <div style={{
@@ -1077,12 +1125,20 @@ const R8R: React.FC<R8RProps> = ({
                         opacity: isActive ? 1 : 0.5,
                         flexShrink: 0,
                       }} />
-                      <div style={{ flexShrink: 0 }}>
+                      <div 
+                        style={{ 
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                        }}
+                      >
                         {dataset.label}
                       </div>
+
                     </div>
                   );
                 })}
+                
+
               </div>
             </div>
           )}
@@ -1165,6 +1221,9 @@ const R8R: React.FC<R8RProps> = ({
               const isActive = datasetState.status === 'active';
               const isHighlighted = datasetState.status === 'highlighted';
               
+              // Skip rendering inactive datasets completely
+              if (datasetState.status === 'inactive') return null;
+              
               // Calculate polygon bounds for gradient positioning
               const minX = Math.min(...points.map(p => p.x));
               const maxX = Math.max(...points.map(p => p.x));
@@ -1175,40 +1234,15 @@ const R8R: React.FC<R8RProps> = ({
               // Process color with polygon bounds for chart-centered gradients
               const { centerX, centerY } = chartConfig;
               const chartCenter = { x: centerX, y: centerY };
-              const originalColor = dataset.color || colors[index % colors.length];
+              const currentColors = localColors;
+              const originalColor = dataset.color || currentColors[index % currentColors.length];
               const processedColor = processColorOrGradient(originalColor, '#3b82f6', chartCenter, polygonBounds);
               
               const displayColor = getDatasetColor(index, processedColor.fill);
               
-              // For inactive datasets, use grayscale for stroke and nearly transparent fill
-              const strokeColor = (isActive || isHighlighted) ? displayColor : (() => {
-                const opacity = theme === 'dark' ? 0.9 : 0.6; // Higher opacity for dark theme
-                
-                // Handle both hex and rgba colors
-                if (displayColor.startsWith('#')) {
-                  // Hex color conversion
-                  const hex = displayColor.slice(1); // Remove #
-                  const r = parseInt(hex.slice(0, 2), 16);
-                  const g = parseInt(hex.slice(2, 4), 16);
-                  const b = parseInt(hex.slice(4, 6), 16);
-                  const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-                  return `rgba(${gray}, ${gray}, ${gray}, ${opacity})`;
-                } else if (displayColor.startsWith('rgba')) {
-                  // Extract RGB values from rgba
-                  const match = displayColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                  if (match) {
-                    const r = parseInt(match[1]);
-                    const g = parseInt(match[2]);
-                    const b = parseInt(match[3]);
-                    const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-                    return `rgba(${gray}, ${gray}, ${gray}, ${opacity})`;
-                  }
-                }
-                // Fallback to a default gray
-                return `rgba(128, 128, 128, ${opacity})`;
-              })();
-              
-              const fillColor = (isActive || isHighlighted) ? displayColor : strokeColor; // Use grayscale for inactive fill
+              // Only active and highlighted datasets are rendered
+              const strokeColor = displayColor;
+              const fillColor = displayColor;
               
               return {
                 dataset,
@@ -1225,14 +1259,11 @@ const R8R: React.FC<R8RProps> = ({
             })
             .filter((item): item is NonNullable<typeof item> => item !== null)
             .sort((a, b) => {
-              // Sort by: inactive first (bottom), then active, then highlighted (top)
-              if (a.isHighlighted !== b.isHighlighted) {
-                return a.isHighlighted ? 1 : -1; // Highlighted last (on top)
-              }
-              if (a.isActive !== b.isActive) {
-                return a.isActive ? 1 : -1; // Active last (above inactive)
-              }
-              return 0; // Keep original order for same type
+              // Sort by polygon order (first in order = top layer, last in order = bottom layer)
+              const currentOrder = polygonOrder.length > 0 ? polygonOrder : Array.from({ length: allDatasetPoints.length }, (_, i) => i);
+              const aOrder = currentOrder.indexOf(a.index);
+              const bOrder = currentOrder.indexOf(b.index);
+              return bOrder - aOrder; // Higher order index = higher in stack (reversed for SVG rendering)
             })
             .map(({ dataset, points, color, index, strokeColor, fillColor, isActive, isHighlighted }) => (
               <g key={`dataset-${index}`}>
@@ -1242,18 +1273,20 @@ const R8R: React.FC<R8RProps> = ({
                   fill={fillColor}
                   fillOpacity={
                     isHighlighted ? "0.75" : // 75% opacity for highlighted
-                    isActive ? (hasHighlightedDataset() ? "0.0" : "0.2") : // 0% if something is highlighted, otherwise normal
-                    "0.0" // 0% opacity for inactive
+                    "0.0" // 0% opacity for active (outline only)
                   }
                   stroke={strokeColor}
                   strokeWidth="2"
-                  strokeOpacity={(isActive || isHighlighted) ? "0.8" : "0.6"}
-                  style={{ cursor: isActive ? 'pointer' : 'default' }}
-                  onMouseEnter={() => isActive && handleMouseEnter(index)}
-                  onMouseLeave={() => isActive && handleMouseLeave(index)}
-                  onTouchStart={() => isActive && handleTouchStart(index)}
-                  onTouchEnd={() => isActive && handleTouchEnd(index)}
-                  onTouchCancel={() => isActive && handleTouchCancel(index)}
+                  strokeOpacity="0.8"
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseLeave={() => handleMouseLeave(index)}
+                  onClick={() => handleClick(index)}
+                  onMouseDown={() => handleMouseDown(index)}
+                  onMouseUp={() => handleMouseUp(index)}
+                  onTouchStart={() => handleTouchStart(index)}
+                  onTouchEnd={() => handleTouchEnd(index)}
+                  onTouchCancel={() => handleTouchCancel(index)}
                 />
 
               </g>

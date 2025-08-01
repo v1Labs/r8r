@@ -4,6 +4,7 @@ export interface DataPoint {
   label: string;
   value: number;
   maxValue?: number;
+  highlighted?: boolean;
 }
 
 export interface Dataset {
@@ -67,6 +68,8 @@ export interface R8RProps {
   className?: string;
   /** Custom CSS styles */
   style?: React.CSSProperties;
+  /** Callback when chart configuration changes (e.g., axis highlighting) */
+  onChartChange?: (updatedChart: DataPoint[]) => void;
 
 }
 
@@ -248,6 +251,7 @@ const R8R: React.FC<R8RProps> = ({
 
   className = '',
   style = {},
+  onChartChange,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [datasetStates, setDatasetStates] = useState<Map<number, { status: DatasetState }>>(() => {
@@ -269,6 +273,7 @@ const R8R: React.FC<R8RProps> = ({
   const [highlightedAxis, setHighlightedAxis] = useState<number | null>(null);
   const [axisLongPressTimer, setAxisLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [isAxisAnimating, setIsAxisAnimating] = useState(false);
+  const [internalChartState, setInternalChartState] = useState<DataPoint[]>(chart);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -417,6 +422,11 @@ const R8R: React.FC<R8RProps> = ({
     setLocalColors(colors);
   }, [colors]);
 
+  // Sync internal chart state with chart prop when it changes
+  useEffect(() => {
+    setInternalChartState(chart);
+  }, [chart]);
+
   // Calculate chart dimensions and positioning
   const chartConfig = useMemo(() => {
     // Use the observed container width directly
@@ -557,71 +567,106 @@ const R8R: React.FC<R8RProps> = ({
     return lines;
   }, [chart, chartConfig]);
 
-  // Generate intersection lines and labels for highlighted axis
+  // Generate intersection lines and labels for highlighted axes
   const intersectionElements = useMemo(() => {
-    if (highlightedAxis === null) return { lines: [], labels: [], axisOverlay: null };
+    // Show intersection elements when hovering OR when any chart element is highlighted
+    const shouldShowElements = highlightedAxis !== null || 
+      internalChartState.some(dataPoint => dataPoint.highlighted ?? false);
+    
+    if (!shouldShowElements) return { lines: [], labels: [], axisOverlays: [] };
     
     const { centerX, centerY, radius } = chartConfig;
-    const highlightedLine = axisLines[highlightedAxis];
-    if (!highlightedLine) return { lines: [], labels: [], axisOverlay: null };
+    const allLines: Array<{x1: number; y1: number; x2: number; y2: number}> = [];
+    const allLabels: Array<{x: number; y: number; text: string; angle: number}> = [];
+    const allAxisOverlays: Array<{x1: number; y1: number; x2: number; y2: number}> = [];
     
-    const lines = [];
-    const labels = [];
-    const levels = 6; // 0%, 20%, 40%, 60%, 80%, 100%
+    // Get all axes that should show elements (hovered or highlighted)
+    const axesToShow = new Set<number>();
     
-    for (let i = 0; i < levels; i++) {
-      const percentage = i / (levels - 1); // 0, 0.2, 0.4, 0.6, 0.8, 1
-      const pointRadius = radius * percentage;
-      
-      // Calculate intersection point on the highlighted axis
-      const intersectionX = centerX + pointRadius * Math.cos(highlightedLine.angle);
-      const intersectionY = centerY + pointRadius * Math.sin(highlightedLine.angle);
-      
-      // Calculate perpendicular line (intersecting line) - only to the right side
-      const perpAngle = highlightedLine.angle + Math.PI / 2;
-      const lineLength = 10; // Half the original length
-      
-      // Only draw line to the right side of the axis
-      const lineStartX = intersectionX;
-      const lineStartY = intersectionY;
-      const lineEndX = intersectionX + lineLength * Math.cos(perpAngle);
-      const lineEndY = intersectionY + lineLength * Math.sin(perpAngle);
-      
-      lines.push({
-        x1: lineStartX,
-        y1: lineStartY,
-        x2: lineEndX,
-        y2: lineEndY,
-      });
-      
-      // Calculate label position (perpendicular to the axis, away from center)
-      const labelDistance = 20; // Balanced distance - not too close, not too far
-      const labelAngle = highlightedLine.angle + Math.PI / 2;
-      const labelX = intersectionX + labelDistance * Math.cos(labelAngle);
-      const labelY = intersectionY + labelDistance * Math.sin(labelAngle);
-      
-      // Calculate the actual value based on the chart's maxValue
-      const maxValue = chart[highlightedAxis]?.maxValue || chartConfig.maxValue;
-      const actualValue = Math.round(percentage * maxValue);
-      
-      labels.push({
-        x: labelX,
-        y: labelY,
-        text: actualValue.toString(),
-        angle: labelAngle,
-      });
+    // Add hovered axis if any (but only if it's not already highlighted)
+    if (highlightedAxis !== null && !(internalChartState[highlightedAxis]?.highlighted ?? false)) {
+      axesToShow.add(highlightedAxis);
     }
     
-    // Create axis overlay line
-    const axisOverlay = {
-      x1: highlightedLine.x1,
-      y1: highlightedLine.y1,
-      x2: highlightedLine.x2,
-      y2: highlightedLine.y2,
-    };
+    // Add all highlighted axes
+    internalChartState.forEach((dataPoint, index) => {
+      if (dataPoint.highlighted ?? false) {
+        axesToShow.add(index);
+      }
+    });
     
-    return { lines, labels, axisOverlay };
-  }, [highlightedAxis, axisLines, chartConfig, chart]);
+    // Generate elements for each axis
+    axesToShow.forEach(axisIndex => {
+      const highlightedLine = axisLines[axisIndex];
+      if (!highlightedLine) return;
+      
+      const lines = [];
+      const labels = [];
+      const levels = 6; // 0%, 20%, 40%, 60%, 80%, 100%
+      
+      for (let i = 0; i < levels; i++) {
+        const percentage = i / (levels - 1); // 0, 0.2, 0.4, 0.6, 0.8, 1
+        const pointRadius = radius * percentage;
+        
+        // Calculate intersection point on the highlighted axis
+        const intersectionX = centerX + pointRadius * Math.cos(highlightedLine.angle);
+        const intersectionY = centerY + pointRadius * Math.sin(highlightedLine.angle);
+        
+        // Calculate perpendicular line (intersecting line) - only to the right side
+        const perpAngle = highlightedLine.angle + Math.PI / 2;
+        const lineLength = 10; // Half the original length
+        
+        // Only draw line to the right side of the axis
+        const lineStartX = intersectionX;
+        const lineStartY = intersectionY;
+        const lineEndX = intersectionX + lineLength * Math.cos(perpAngle);
+        const lineEndY = intersectionY + lineLength * Math.sin(perpAngle);
+        
+        lines.push({
+          x1: lineStartX,
+          y1: lineStartY,
+          x2: lineEndX,
+          y2: lineEndY,
+        });
+        
+        // Calculate label position (aligned with the dash, away from center)
+        const labelDistance = 15; // More space between dash and label
+        const labelAngle = perpAngle; // Same angle as the dash
+        const labelX = intersectionX + labelDistance * Math.cos(labelAngle);
+        const labelY = intersectionY + labelDistance * Math.sin(labelAngle);
+        
+        // Calculate the actual value based on the chart's maxValue
+        const maxValue = internalChartState[axisIndex]?.maxValue || chartConfig.maxValue;
+        const actualValue = Math.round(percentage * maxValue);
+        
+        // Determine if label is below center and needs 180-degree rotation
+        const isBelowCenter = highlightedLine.y2 > chartConfig.centerY;
+        const finalAngle = isBelowCenter ? labelAngle + Math.PI : labelAngle;
+        
+        labels.push({
+          x: labelX,
+          y: labelY,
+          text: actualValue.toString(),
+          angle: finalAngle,
+          isBelowCenter,
+        });
+      }
+      
+      // Create axis overlay line
+      const axisOverlay = {
+        x1: highlightedLine.x1,
+        y1: highlightedLine.y1,
+        x2: highlightedLine.x2,
+        y2: highlightedLine.y2,
+      };
+      
+      allLines.push(...lines);
+      allLabels.push(...labels);
+      allAxisOverlays.push(axisOverlay);
+    });
+    
+    return { lines: allLines, labels: allLabels, axisOverlays: allAxisOverlays };
+  }, [highlightedAxis, axisLines, chartConfig, internalChartState]);
 
 
 
@@ -871,6 +916,11 @@ const R8R: React.FC<R8RProps> = ({
   };
 
   const handleAxisMouseEnter = (axisIndex: number) => {
+    // Don't highlight if this axis is already highlighted (prevents flickering)
+    if (internalChartState[axisIndex]?.highlighted) {
+      return;
+    }
+    
     // Highlight axis on hover (desktop)
     setIsAxisAnimating(true);
     setHighlightedAxis(axisIndex);
@@ -882,6 +932,11 @@ const R8R: React.FC<R8RProps> = ({
     if (axisLongPressTimer) {
       clearTimeout(axisLongPressTimer);
       setAxisLongPressTimer(null);
+    }
+    
+    // Don't remove highlight if this axis is highlighted (prevents flickering)
+    if (internalChartState[axisIndex]?.highlighted) {
+      return;
     }
     
     // Remove highlight on mouse leave
@@ -907,6 +962,29 @@ const R8R: React.FC<R8RProps> = ({
     
     // Remove highlight
     setHighlightedAxis(null);
+  };
+
+  const handleAxisClick = (axisIndex: number) => {
+    console.log('Axis clicked:', axisIndex, 'Current internal chart state:', internalChartState);
+    
+    // Toggle the highlighted state of the chart element
+    const updatedChart = internalChartState.map((dataPoint, index) => 
+      index === axisIndex 
+        ? { ...dataPoint, highlighted: !(dataPoint.highlighted ?? false) }
+        : dataPoint
+    );
+    
+    console.log('Updated chart:', updatedChart, 'onChartChange provided:', !!onChartChange);
+    
+    // Update internal state
+    setInternalChartState(updatedChart);
+    
+    // Call the callback to update the chart in the parent component
+    if (onChartChange) {
+      onChartChange(updatedChart);
+    } else {
+      console.log('onChartChange callback not provided - using internal state management');
+    }
   };
 
   // Touch event handlers for mobile
@@ -945,6 +1023,18 @@ const R8R: React.FC<R8RProps> = ({
   // Check if any dataset is currently highlighted
   const hasHighlightedDataset = () => {
     return Array.from(datasetStates.values()).some(state => state.status === 'highlighted');
+  };
+
+  // Calculate opacity based on dataset position in order
+  const getDatasetOpacity = (index: number) => {
+    const currentOrder = polygonOrder.length > 0 ? polygonOrder : Array.from({ length: allDatasetPoints.length }, (_, i) => i);
+    const position = currentOrder.indexOf(index);
+    
+    // Top dataset (position 0) gets highest opacity, all others get medium opacity
+    const strokeOpacity = position === 0 ? 0.95 : 0.45;
+    const fillOpacity = position === 0 ? 0.85 : 0.35;
+    
+    return { strokeOpacity, fillOpacity };
   };
 
   // Get dataset color based on status and hover state
@@ -1070,6 +1160,11 @@ const R8R: React.FC<R8RProps> = ({
                   const isHighlighted = datasetState.status === 'highlighted';
                   const isInactive = datasetState.status === 'inactive';
                   const isHovered = hoveredDataset === index;
+                  
+                  // Determine if this dataset is the top one
+                  const currentOrder = polygonOrder.length > 0 ? polygonOrder : Array.from({ length: allDatasetPoints.length }, (_, i) => i);
+                  const isTopDataset = currentOrder[0] === index;
+                  
                   // For legend indicators, use the 'from' color if it's a gradient, otherwise use the fill
                   const currentColors = localColors;
                   const originalColor = dataset.color || currentColors[index % currentColors.length];
@@ -1184,11 +1279,11 @@ const R8R: React.FC<R8RProps> = ({
                 <g>
                   {/* Label */}
                   <text
-                      x={line.x2 + Math.cos(line.angle) * 12}
-                      y={line.y2 + Math.sin(line.angle) * 12}
+                      x={line.x2 + Math.cos(line.angle) * 14}
+                      y={line.y2 + Math.sin(line.angle) * 14}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize="11"
+                      fontSize={internalChartState[index]?.highlighted ? "17" : "11"}
                       fill={currentTheme.textColor}
                       fontWeight="600"
                       style={{ 
@@ -1201,6 +1296,7 @@ const R8R: React.FC<R8RProps> = ({
                     onMouseLeave={() => handleAxisMouseLeave(index)}
                     onMouseDown={() => handleAxisMouseDown(index)}
                     onMouseUp={() => handleAxisMouseUp(index)}
+                    onClick={() => handleAxisClick(index)}
                     onTouchStart={() => handleAxisTouchStart(index)}
                     onTouchEnd={() => handleAxisTouchEnd(index)}
                     onTouchCancel={() => handleAxisTouchCancel(index)}
@@ -1244,6 +1340,9 @@ const R8R: React.FC<R8RProps> = ({
               const strokeColor = displayColor;
               const fillColor = displayColor;
               
+              // Get opacity based on dataset position
+              const { strokeOpacity, fillOpacity } = getDatasetOpacity(index);
+              
               return {
                 dataset,
                 points,
@@ -1254,7 +1353,9 @@ const R8R: React.FC<R8RProps> = ({
                 isHighlighted,
                 displayColor,
                 strokeColor,
-                fillColor
+                fillColor,
+                strokeOpacity,
+                fillOpacity
               };
             })
             .filter((item): item is NonNullable<typeof item> => item !== null)
@@ -1265,19 +1366,19 @@ const R8R: React.FC<R8RProps> = ({
               const bOrder = currentOrder.indexOf(b.index);
               return bOrder - aOrder; // Higher order index = higher in stack (reversed for SVG rendering)
             })
-            .map(({ dataset, points, color, index, strokeColor, fillColor, isActive, isHighlighted }) => (
+            .map(({ dataset, points, color, index, strokeColor, fillColor, isActive, isHighlighted, strokeOpacity, fillOpacity }) => (
               <g key={`dataset-${index}`}>
                 {color.gradientDef}
                 <path
                   d={createPolygonPath(points, dataBorderRadius)}
                   fill={fillColor}
                   fillOpacity={
-                    isHighlighted ? "0.75" : // 75% opacity for highlighted
-                    "0.0" // 0% opacity for active (outline only)
+                    isHighlighted ? fillOpacity.toString() : // Use calculated fill opacity for highlighted datasets
+                    "0.0" // 0% opacity for active datasets (outline only)
                   }
                   stroke={strokeColor}
                   strokeWidth="2"
-                  strokeOpacity="0.8"
+                  strokeOpacity={strokeOpacity.toString()}
                   style={{ cursor: 'pointer' }}
                   onMouseEnter={() => handleMouseEnter(index)}
                   onMouseLeave={() => handleMouseLeave(index)}
@@ -1315,35 +1416,33 @@ const R8R: React.FC<R8RProps> = ({
               key={`intersection-label-${index}`}
               x={label.x}
               y={label.y}
-              textAnchor="middle"
+              textAnchor={label.isBelowCenter ? "end" : "start"}
               dominantBaseline="middle"
               fontSize="10"
               fill={currentTheme.textColor}
               fontWeight="600"
-              opacity={isAxisAnimating ? "0.4" : "1"}
               style={{
-                transition: 'all 0.2s ease',
+                transform: `rotate(${label.angle * 180 / Math.PI}deg)`,
+                transformOrigin: `${label.x}px ${label.y}px`,
               }}
             >
               {label.text}
             </text>
           ))}
 
-          {/* Axis overlay for highlighted axis - rendered on top */}
-          {intersectionElements.axisOverlay && (
+          {/* Axis overlays for highlighted axes - rendered on top */}
+          {intersectionElements.axisOverlays.map((overlay, index) => (
             <line
-              x1={intersectionElements.axisOverlay.x1}
-              y1={intersectionElements.axisOverlay.y1}
-              x2={intersectionElements.axisOverlay.x2}
-              y2={intersectionElements.axisOverlay.y2}
+              key={`axis-overlay-${index}`}
+              x1={overlay.x1}
+              y1={overlay.y1}
+              x2={overlay.x2}
+              y2={overlay.y2}
               stroke={currentTheme.textColor}
               strokeWidth="1.5"
-              strokeOpacity={isAxisAnimating ? "0.4" : "0.7"}
-              style={{
-                transition: 'all 0.2s ease',
-              }}
+              strokeOpacity="0.7"
             />
-          )}
+          ))}
         </svg>
       </div>
     </div>

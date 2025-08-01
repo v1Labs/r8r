@@ -2,7 +2,43 @@
 
 All notable changes to R8R will be documented in this file.
 
-## [1.0.13] - 2025-01-27
+## [1.0.14] - 2025-08-01
+
+### 🎯 Enhanced Dataset Visual Hierarchy
+- **Two-tier opacity system**: Top dataset stands out with 95% stroke opacity and 85% fill opacity, all others use 45% stroke and 35% fill opacity
+- **Simplified visual hierarchy**: Clear distinction between the most important dataset and supporting datasets without excessive transparency
+- **Position-based calculation**: Opacity is calculated based on dataset position in the polygon order (top = highest opacity)
+- **Balanced visibility**: All datasets remain clearly visible while maintaining focus on the primary dataset
+- **Consistent opacity levels**: For 8 datasets, opacity progression is: 95%/85% → 45%/35% → 45%/35% → 45%/35% → 45%/35% → 45%/35% → 45%/35% → 45%/35%
+- **State-based opacity behavior**: Active datasets use calculated stroke opacity with 0% fill (outline only), highlighted datasets use calculated stroke and fill opacity
+- **Dynamic reordering**: Opacity automatically updates when datasets are reordered via legend clicks
+
+- **Improved data focus**: Makes it easier to identify and focus on the most important dataset without losing visibility of others
+
+### 🎯 Enhanced Axis Label Interaction
+- **Always visible labels**: Axis labels are always visible for clear axis identification
+- **Hover to reveal details**: Hovering over axis labels reveals intersection lines, numbers, and axis overlay
+- **Click to pin details**: Clicking an axis label toggles its `highlighted` state in the chart configuration
+- **Multiple persistent axes**: Multiple axes can be highlighted simultaneously for comprehensive analysis
+- **Multiple axis overlays**: All highlighted axes show their intersection lines, numbers, and axis overlays simultaneously
+- **Flicker-free interaction**: Hover effects are disabled for already highlighted axes to prevent visual flickering
+- **Visual highlighting indicator**: Highlighted axis labels increase font size from 11px to 17px for clear visual feedback
+- **Configuration-based state**: Axis highlighting is stored in the chart configuration with optional `highlighted` field (defaults to `false` when not specified)
+- **Parent component control**: New `onChartChange` callback allows parent components to handle chart state updates
+- **Internal state management**: When `onChartChange` is not provided, the component manages highlighting state internally
+- **Smooth transitions**: All detail visibility changes use smooth 200ms transitions
+- **Improved UX**: Users can pin multiple important axes for reference while exploring the chart
+
+### 🎯 Enhanced Intersection Label Readability
+- **Rotated number alignment**: Intersection numbers rotate to align with their corresponding dash lines for better visual association
+- **Smart text orientation**: Numbers below the chart center automatically rotate 180 degrees to remain readable
+- **Optimized spacing**: Increased distance from 15px to 18px between dash lines and numbers for better visual separation
+- **Dynamic text anchoring**: Text anchor adjusts based on position (start/end) to ensure proper alignment with dash direction
+- **Clean visual hierarchy**: Numbers flow naturally with dash lines instead of being perpendicular, eliminating clash with axis labels
+- **Professional appearance**: Rotated numbers create a more organized and intuitive reading experience
+- **Position-aware rendering**: Each intersection number is positioned and oriented based on its specific location on the chart
+
+## [1.0.13] - 2025-07-27
 
 ### 🎯 Enhanced Dataset State Management
 - **Improved inactive state behavior**: Inactive datasets are now completely hidden from the chart instead of showing as gray lines
@@ -44,7 +80,7 @@ All notable changes to R8R will be documented in this file.
 - **Cross-platform support**: Works seamlessly on desktop (mouse) and mobile (touch) devices
 - **Clean codebase**: Removed all drag and drop related code for simpler maintenance
 
-## [1.0.12] - 2025-01-26
+## [1.0.12] - 2025-07-26
 
 ### 🧹 Icon Functionality Removal
 - **Removed icon system**: Eliminated the icon functionality from chart dimensions to simplify the component
@@ -107,7 +143,7 @@ All notable changes to R8R will be documented in this file.
 - **Softened design**: Creates a more modern, softer visual appearance with geometrically sound curves
 - **Backward compatibility**: Defaults to 0 (sharp corners) for existing implementations
 
-## [1.0.11] - 2025-01-21
+## [1.0.11] - 2025-07-21
 
 ### 🎯 Progressive Disclosure Feature
 - **Axis label interaction**: Hover or long press on axis labels to reveal detailed range information

@@ -11,10 +11,16 @@ export interface Dataset {
   label: string;
   values: Record<string, number>;
   color?: string;
-  status?: 'hidden' | 'inactive' | 'active';
+  status?: 'hidden' | 'inactive' | 'active' | 'highlighted';
 }
 
 export type DatasetState = 'hidden' | 'inactive' | 'active' | 'highlighted';
+
+export interface Footnote {
+  label: string;
+  note: string;
+  highlight: string[];
+}
 
 export interface Gradient {
   type: 'gradient';
@@ -70,6 +76,12 @@ export interface R8RProps {
   style?: React.CSSProperties;
   /** Callback when chart configuration changes (e.g., axis highlighting) */
   onChartChange?: (updatedChart: DataPoint[]) => void;
+  /** Array of footnotes to display below the chart */
+  footnotes?: Footnote[];
+  /** Placeholder text shown when no footnote is selected */
+  placeholder?: string;
+  /** Index of initially active footnote (0-based) */
+  activeFootnote?: number;
 
 }
 
@@ -247,7 +259,9 @@ const R8R: React.FC<R8RProps> = ({
   showBorder = true,
   animationDuration = 200,
   dataBorderRadius = 0,
-
+  footnotes = [],
+  placeholder = 'Footnotes: Click to explore',
+  activeFootnote: initialActiveFootnote,
 
   className = '',
   style = {},
@@ -274,6 +288,7 @@ const R8R: React.FC<R8RProps> = ({
   const [axisLongPressTimer, setAxisLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [isAxisAnimating, setIsAxisAnimating] = useState(false);
   const [internalChartState, setInternalChartState] = useState<DataPoint[]>(chart);
+  const [activeFootnote, setActiveFootnote] = useState<number | null>(initialActiveFootnote ?? null);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -577,10 +592,12 @@ const R8R: React.FC<R8RProps> = ({
     
     const { centerX, centerY, radius } = chartConfig;
     const allLines: Array<{x1: number; y1: number; x2: number; y2: number}> = [];
-    const allLabels: Array<{x: number; y: number; text: string; angle: number}> = [];
+    const allLabels: Array<{
+      isBelowCenter: any;x: number; y: number; text: string; angle: number
+}> = [];
     const allAxisOverlays: Array<{x1: number; y1: number; x2: number; y2: number}> = [];
     
-    // Get all axes that should show elements (hovered or highlighted)
+    // Get all axes that should show elements (hovered, highlighted, or footnote-highlighted)
     const axesToShow = new Set<number>();
     
     // Add hovered axis if any (but only if it's not already highlighted)
@@ -588,12 +605,14 @@ const R8R: React.FC<R8RProps> = ({
       axesToShow.add(highlightedAxis);
     }
     
-    // Add all highlighted axes
+    // Add all highlighted axes from chart configuration
     internalChartState.forEach((dataPoint, index) => {
       if (dataPoint.highlighted ?? false) {
         axesToShow.add(index);
       }
     });
+    
+
     
     // Generate elements for each axis
     axesToShow.forEach(axisIndex => {
@@ -794,6 +813,39 @@ const R8R: React.FC<R8RProps> = ({
 
   // Toggle dataset status through 3-way cycle: inactive -> active -> highlighted
   const toggleDataset = (index: number) => {
+    // Handle legend click when footnote is active
+    if (activeFootnote !== null) {
+      // Clear the active footnote but preserve current state
+      setActiveFootnote(null);
+      // Keep current chart state (don't reset it)
+      
+      // Keep current dataset states, just toggle the clicked dataset
+      const newStates = new Map(datasetStates);
+      const currentState = newStates.get(index);
+      
+      if (currentState) {
+        // Toggle the clicked dataset: inactive -> active -> highlighted -> inactive
+        let newStatus: 'inactive' | 'active' | 'highlighted';
+        switch (currentState.status) {
+          case 'inactive':
+            newStatus = 'active';
+            break;
+          case 'active':
+            newStatus = 'highlighted';
+            break;
+          case 'highlighted':
+            newStatus = 'inactive';
+            break;
+          default:
+            newStatus = 'active';
+        }
+        
+        newStates.set(index, { status: newStatus });
+        setDatasetStates(newStates);
+      }
+      return;
+    }
+
     const newStates = new Map(datasetStates);
     const currentState = newStates.get(index);
     if (!currentState) return;
@@ -967,6 +1019,11 @@ const R8R: React.FC<R8RProps> = ({
   const handleAxisClick = (axisIndex: number) => {
     console.log('Axis clicked:', axisIndex, 'Current internal chart state:', internalChartState);
     
+    // Clear active footnote when axis is clicked
+    if (activeFootnote !== null) {
+      setActiveFootnote(null);
+    }
+    
     // Toggle the highlighted state of the chart element
     const updatedChart = internalChartState.map((dataPoint, index) => 
       index === axisIndex 
@@ -1016,9 +1073,91 @@ const R8R: React.FC<R8RProps> = ({
     }
   };
 
+  // Handle footnote click
+  const handleFootnoteClick = (footnoteIndex: number) => {
+    const footnote = footnotes[footnoteIndex];
+    if (!footnote) return;
 
-
-
+    // Toggle footnote activation
+    if (activeFootnote === footnoteIndex) {
+      setActiveFootnote(null);
+      // Don't change any dataset or chart state - just deactivate the footnote
+    } else {
+      setActiveFootnote(footnoteIndex);
+      
+      // Separate dataset labels from data point labels
+      const datasetLabels = new Set<string>();
+      const dataPointLabels = new Set<string>();
+      
+      footnote.highlight.forEach(label => {
+        // Check if this label is a dataset label
+        const isDatasetLabel = data.some(dataset => dataset.label === label);
+        if (isDatasetLabel) {
+          datasetLabels.add(label);
+        } else {
+          // Check if this label is a data point label (axis label)
+          const isDataPointLabel = chart.some(dataPoint => dataPoint.label === label);
+          if (isDataPointLabel) {
+            dataPointLabels.add(label);
+          }
+        }
+      });
+      
+      // Apply dataset highlighting
+      const newStates = new Map();
+      data.forEach((dataset, index) => {
+        const isDatasetHighlighted = datasetLabels.has(dataset.label);
+        
+        if (isDatasetHighlighted) {
+          newStates.set(index, { status: 'highlighted' });
+        } else if (dataset.status === 'hidden') {
+          newStates.set(index, { status: 'hidden' });
+        } else {
+          newStates.set(index, { status: 'inactive' });
+        }
+      });
+      setDatasetStates(newStates);
+      
+      // Clear any hovered axis state
+      setHighlightedAxis(null);
+      
+      // Set highlighted data points in chart state
+      const updatedChartState = chart.map((dataPoint, index) => {
+        if (dataPointLabels.has(dataPoint.label)) {
+          return { ...dataPoint, highlighted: true };
+        } else {
+          // Clear any existing highlighting from footnotes
+          return { ...dataPoint, highlighted: false };
+        }
+      });
+      setInternalChartState(updatedChartState);
+      
+      // Reorder datasets to bring highlighted ones to the top
+      const highlightedIndices = Array.from(newStates.entries())
+        .filter(([_, state]) => state.status === 'highlighted')
+        .map(([index, _]) => index);
+      
+      if (highlightedIndices.length > 0) {
+        const currentOrder = polygonOrder.length > 0 ? polygonOrder : Array.from({ length: data.length }, (_, i) => i);
+        const newOrder = [...currentOrder];
+        
+        // Remove highlighted indices from their current positions
+        highlightedIndices.forEach(index => {
+          const currentIndex = newOrder.indexOf(index);
+          if (currentIndex > -1) {
+            newOrder.splice(currentIndex, 1);
+          }
+        });
+        
+        // Add highlighted indices to the front (top of stack)
+        highlightedIndices.forEach(index => {
+          newOrder.unshift(index);
+        });
+        
+        setPolygonOrder(newOrder);
+      }
+    }
+  };
 
   // Check if any dataset is currently highlighted
   const hasHighlightedDataset = () => {
@@ -1031,8 +1170,8 @@ const R8R: React.FC<R8RProps> = ({
     const position = currentOrder.indexOf(index);
     
     // Top dataset (position 0) gets highest opacity, all others get medium opacity
-    const strokeOpacity = position === 0 ? 0.95 : 0.45;
-    const fillOpacity = position === 0 ? 0.85 : 0.35;
+    const strokeOpacity = position === 0 ? 0.85 : 0.45;
+    const fillOpacity = position === 0 ? 0.75 : 0.35;
     
     return { strokeOpacity, fillOpacity };
   };
@@ -1081,12 +1220,91 @@ const R8R: React.FC<R8RProps> = ({
     return () => clearTimeout(timer);
   }, [data, chart, animationDuration]);
 
+  // Apply initial active footnote if provided
+  useEffect(() => {
+    if (initialActiveFootnote !== null && initialActiveFootnote !== undefined && footnotes.length > 0) {
+      const footnote = footnotes[initialActiveFootnote];
+      if (footnote) {
+        // Apply the footnote highlighting logic
+        const datasetLabels = new Set<string>();
+        const dataPointLabels = new Set<string>();
+        
+        footnote.highlight.forEach(label => {
+          // Check if this label is a dataset label
+          const isDatasetLabel = data.some(dataset => dataset.label === label);
+          if (isDatasetLabel) {
+            datasetLabels.add(label);
+          } else {
+            // Check if this label is a data point label (axis label)
+            const isDataPointLabel = chart.some(dataPoint => dataPoint.label === label);
+            if (isDataPointLabel) {
+              dataPointLabels.add(label);
+            }
+          }
+        });
+        
+        // Apply dataset highlighting
+        const newStates = new Map();
+        data.forEach((dataset, index) => {
+          const isDatasetHighlighted = datasetLabels.has(dataset.label);
+          
+          if (isDatasetHighlighted) {
+            newStates.set(index, { status: 'highlighted' });
+          } else if (dataset.status === 'hidden') {
+            newStates.set(index, { status: 'hidden' });
+          } else {
+            newStates.set(index, { status: 'inactive' });
+          }
+        });
+        setDatasetStates(newStates);
+        
+        // Clear any hovered axis state
+        setHighlightedAxis(null);
+        
+        // Set highlighted data points in chart state
+        const updatedChartState = chart.map((dataPoint, index) => {
+          if (dataPointLabels.has(dataPoint.label)) {
+            return { ...dataPoint, highlighted: true };
+          } else {
+            // Clear any existing highlighting from footnotes
+            return { ...dataPoint, highlighted: false };
+          }
+        });
+        setInternalChartState(updatedChartState);
+        
+        // Reorder datasets to bring highlighted ones to the top
+        const highlightedIndices = Array.from(newStates.entries())
+          .filter(([_, state]) => state.status === 'highlighted')
+          .map(([index, _]) => index);
+        
+        if (highlightedIndices.length > 0) {
+          const currentOrder = polygonOrder.length > 0 ? polygonOrder : Array.from({ length: data.length }, (_, i) => i);
+          const newOrder = [...currentOrder];
+          
+          // Remove highlighted indices from their current positions
+          highlightedIndices.forEach(index => {
+            const currentIndex = newOrder.indexOf(index);
+            if (currentIndex > -1) {
+              newOrder.splice(currentIndex, 1);
+            }
+          });
+          
+          // Add highlighted indices to the front (top of stack)
+          highlightedIndices.forEach(index => {
+            newOrder.unshift(index);
+          });
+          
+          setPolygonOrder(newOrder);
+        }
+      }
+    }
+  }, [initialActiveFootnote, footnotes, data, chart]);
+
   return (
     <div
       className={`r8r-chart ${className}`}
       style={{
         width: chartConfig.actualWidth,
-        height: chartConfig.totalHeight,
         background: currentTheme.backgroundColor,
         borderRadius: '8px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
@@ -1445,6 +1663,55 @@ const R8R: React.FC<R8RProps> = ({
           ))}
         </svg>
       </div>
+
+      {footnotes.length > 0 && (
+        <div style={{
+          padding: '16px',
+          borderTop: `1px solid ${currentTheme.legendBorderColor}`,
+          background: currentTheme.legendBackgroundColor,
+        }}>
+          {/* Labels Row - Center Aligned */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '6px',
+            marginBottom: '10px',
+          }}>
+            {footnotes.map((footnote, index) => (
+              <div
+                key={index}
+                onClick={() => handleFootnoteClick(index)}
+                style={{
+                  cursor: 'pointer',
+                  padding: '4px 6px',
+                  borderRadius: '4px',
+                  background: activeFootnote === index ? currentTheme.textColor : 'transparent',
+                  color: activeFootnote === index ? currentTheme.backgroundColor : currentTheme.textColor,
+                  transition: 'all 0.2s ease',
+                  fontSize: '10px',
+                  fontWeight: '600',
+                  border: `1px solid ${activeFootnote === index ? currentTheme.backgroundColor : currentTheme.textColor}`,
+                  opacity: activeFootnote === index ? 1 : 0.5,
+                }}
+              >
+                {footnote.label}
+              </div>
+            ))}
+          </div>
+          
+          {/* Note Row - Always shown with placeholder or note */}
+          <div style={{
+            textAlign: 'center',
+            fontSize: '11px',
+            lineHeight: '1.4',
+            color: currentTheme.textColor,
+            opacity: activeFootnote !== null ? 1 : 0.6,
+            fontStyle: activeFootnote !== null ? 'normal' : 'italic',
+          }}>
+            {activeFootnote !== null ? footnotes[activeFootnote]?.note : placeholder}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

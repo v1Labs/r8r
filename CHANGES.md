@@ -2,6 +2,41 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.15] - 2025-08-02
+
+### 📝 Footnotes Feature
+- **Interactive footnotes**: New `footnotes` prop allows adding clickable footnote labels below the chart
+- **Footnote object structure**: Each footnote contains `label`, `note`, and `highlight` array properties
+- **Dual highlighting system**: Footnotes can highlight both datasets and individual data points (axes)
+- **Smart label detection**: Automatically distinguishes between dataset labels and data point labels
+- **Data point highlighting**: Individual axes (like "Health", "Taste") can be highlighted across all datasets
+- **Toggle functionality**: Clicking an active footnote deactivates it and restores original dataset states
+- **Interaction clearing**: Clicking legend items or chart polygons clears active footnotes
+- **Intuitive state management**: When footnotes are cleared, all datasets reset to active state (not previous state)
+- **Consistent behavior**: Chart polygon clicks and legend clicks both clear footnotes for unified UX
+- **Initial state control**: New `activeFootnote` prop sets which footnote is active on component load
+- **Progressive disclosure**: Labels shown by default, notes revealed on click for cleaner interface
+- **Persistent height**: Component maintains consistent height with customizable placeholder text
+- **Visual hierarchy**: Labels use smaller font size (10px) to match legend styling
+- **Opacity states**: Inactive labels show at 50% opacity for better visual hierarchy
+- **Simplified note design**: Clean note display without background or borders, reduced padding
+- **Customizable placeholder**: New `placeholder` prop for custom default text when no footnote is selected
+- **Theme integration**: Footnotes use the same theme colors as the legend for consistent styling
+- **State preservation**: Hidden datasets remain hidden when footnotes are applied
+- **Smooth transitions**: All footnote interactions use smooth 200ms transitions
+- **Flexible labeling**: Support for various label formats (e.g., "1.", "a.", "a vs b")
+- **Complete implementation**: Full UI rendering with interactive styling and click handlers
+- **Smart dataset reordering**: Highlighted datasets automatically move to the top of the polygon stack for better visibility
+- **Visual hierarchy enhancement**: Reordering ensures highlighted datasets are always prominently displayed
+- **Consistent reordering behavior**: Works for both manual footnote clicks and initial `activeFootnote` prop
+
+### 🎯 Enhanced Dataset State Management
+- **Footnote-driven highlighting**: Footnotes can highlight specific datasets while setting others to inactive
+- **State restoration**: Clicking an active footnote restores all datasets to their original states
+- **Hidden state preservation**: Datasets marked as hidden remain hidden regardless of footnote interactions
+- **Improved user control**: Users can quickly focus on specific data insights through footnote interactions
+- **Automatic dataset prioritization**: Highlighted datasets are automatically brought to the front for optimal visibility
+
 ## [1.0.14] - 2025-08-01
 
 ### 🎯 Enhanced Dataset Visual Hierarchy
@@ -9,14 +44,11 @@ All notable changes to R8R will be documented in this file.
 - **Simplified visual hierarchy**: Clear distinction between the most important dataset and supporting datasets without excessive transparency
 - **Position-based calculation**: Opacity is calculated based on dataset position in the polygon order (top = highest opacity)
 - **Balanced visibility**: All datasets remain clearly visible while maintaining focus on the primary dataset
-- **Consistent opacity levels**: For 8 datasets, opacity progression is: 95%/85% → 45%/35% → 45%/35% → 45%/35% → 45%/35% → 45%/35% → 45%/35% → 45%/35%
 - **State-based opacity behavior**: Active datasets use calculated stroke opacity with 0% fill (outline only), highlighted datasets use calculated stroke and fill opacity
 - **Dynamic reordering**: Opacity automatically updates when datasets are reordered via legend clicks
-
 - **Improved data focus**: Makes it easier to identify and focus on the most important dataset without losing visibility of others
 
 ### 🎯 Enhanced Axis Label Interaction
-- **Always visible labels**: Axis labels are always visible for clear axis identification
 - **Hover to reveal details**: Hovering over axis labels reveals intersection lines, numbers, and axis overlay
 - **Click to pin details**: Clicking an axis label toggles its `highlighted` state in the chart configuration
 - **Multiple persistent axes**: Multiple axes can be highlighted simultaneously for comprehensive analysis

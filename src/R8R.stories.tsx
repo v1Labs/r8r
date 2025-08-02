@@ -184,7 +184,7 @@ const darkThemeData: Dataset[] = [
   {
     label: 'Vampire',
     values: { 'Fangs': 80, 'Claws': 25, 'Weapons': 30, 'Armor': 20, 'Treasure': 40, 'Speed': 80, 'Strength': 70 },
-    status: 'active'
+    status: 'highlighted'
   },
   {
     label: 'Zombie',
@@ -216,6 +216,42 @@ const darkThemeChart = [
   { label: 'Treasure', value: 0, maxValue: 100 },
   { label: 'Speed', value: 0, maxValue: 100 },
   { label: 'Strength', value: 0, maxValue: 100 }
+];
+
+const qbData = [
+  {
+    label: 'Tom Brady',
+    values: { 'Passing Yds': 266.3, 'Passing TDs': 1.82, 'Rushing Yds': 3.35, 'Rushing TDs': .08, 'Sacks': 1.68, 'Wins': .75 }
+  },
+  {
+    label: 'Aaron Rodgers',
+    values: { 'Passing Yds': 253.84, 'Passing TDs': 2.03, 'Rushing Yds': 14.41, 'Rushing TDs': .14, 'Sacks': 2.30, 'Wins': .62 }
+  },
+  {
+    label: 'Patrick Mahomes',
+    values: { 'Passing Yds': 288.86, 'Passing TDs': 2.19, 'Rushing Yds': 20.01, 'Rushing TDs': .13, 'Sacks': 1.64, 'Wins': .79 }
+  },
+  {
+    label: 'Lamar Jackson',
+    values: { 'Passing Yds': 194.75, 'Passing TDs': 1.61, 'Rushing Yds': 59.93, 'Rushing TDs': .32, 'Sacks': 1.86, 'Wins': .68 }
+  },
+  {
+    label: 'Drew Brees',
+    values: { 'Passing Yds': 280, 'Passing TDs': 1.99, 'Rushing Yds': 2.62, 'Rushing TDs': .09, 'Sacks': 1.46, 'Wins': .6 }
+  },
+  {
+    label: 'Peyton Manning',
+    values: { 'Passing Yds': 270.45, 'Passing TDs': 2.03, 'Rushing Yds': 2.51, 'Rushing TDs': .07, 'Sacks': 1.14, 'Wins': .7 }
+  }
+];
+
+const qbChart = [
+  { label: 'Passing Yds', value: 0, maxValue: 290 },
+  { label: 'Passing TDs', value: 0, maxValue: 2.2 },
+  { label: 'Rushing Yds', value: 0, maxValue: 60 },
+  { label: 'Rushing TDs', value: 0, maxValue: .35 },
+  { label: 'Sacks', value: 0, maxValue: 2.3 },
+  { label: 'Wins', value: 0, maxValue: .8 }
 ];
 
 export const LightTheme: Story = {
@@ -278,7 +314,41 @@ export const RetroTheme: Story = {
   },
 };
 
-
-
-
- 
+export const WithFootnotes: Story = {
+  args: {
+    data: qbData,
+    chart: qbChart,
+    width: 500,
+    theme: 'light',
+    showGrid: true,
+    showLabels: true,
+    showLegend: true,
+    legendTitle: 'QB Stats Per Game',
+    animationDuration: 200,
+    dataBorderRadius: 5,
+    placeholder: 'Footnotes: Click to explore',
+    activeFootnote: 0, // Start with first footnote active
+    footnotes: [
+      {
+        label: 'a.',
+        note: 'Jackson has 3x more rushing yards per game than Mahomes.',
+        highlight: ['Lamar Jackson', 'Patrick Mahomes', 'Rushing Yds']
+      },
+      {
+        label: 'b.',
+        note: 'Brees and Manning had statistically very similar per game stats.',
+        highlight: ['Drew Brees', 'Peyton Manning']
+      },
+      {
+        label: 'c.',
+        note: 'Patrick Mahomes has the best per game passing yards and touchdowns.',
+        highlight: ['Patrick Mahomes', 'Passing Yds', 'Passing TDs']
+      },
+      {
+        label: 'd.',
+        note: 'Rodgers was sacked 2x more per game than Manning.',
+        highlight: ['Aaron Rodgers', 'Peyton Manning', 'Sacks']
+      }
+    ],
+  },
+};

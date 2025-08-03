@@ -2,6 +2,18 @@
 
 All notable changes to R8R will be documented in this file.
 
+## [1.0.16] - 2025-08-03
+
+### 🐛 Bug Fixes
+- **Fixed footnotes text contrast**: Footnotes now use `legendTextColor` instead of `textColor` for better readability when using dark legend backgrounds with light text
+- **Improved footnote button styling**: Active footnote buttons now use proper contrast colors that work well with the legend background
+- **Enhanced highlighted footnote readability**: Active footnote buttons now use 15% transparent background with solid text and border for better contrast in all themes
+- **Improved footnote visual hierarchy**: Inactive footnote labels now use 25% opacity (down from 50%) to make active footnotes stand out more prominently
+
+### 🎨 Visual Improvements
+- **Refined dataset opacity levels**: Reduced top dataset stroke opacity from 85% to 75% and fill opacity from 75% to 65% for more balanced visual hierarchy
+- **Optimized axis label sizing**: Reduced highlighted axis label font size from 17px to 15px for better proportion and readability
+
 ## [1.0.15] - 2025-08-02
 
 ### 📝 Footnotes Feature

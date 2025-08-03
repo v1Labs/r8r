@@ -1,6 +1,6 @@
 {
   "name": "r8r",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "A modern, zero-dependency radar (spider) chart for visual comparisons in React",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

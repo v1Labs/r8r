@@ -1170,8 +1170,8 @@ const R8R: React.FC<R8RProps> = ({
     const position = currentOrder.indexOf(index);
     
     // Top dataset (position 0) gets highest opacity, all others get medium opacity
-    const strokeOpacity = position === 0 ? 0.85 : 0.45;
-    const fillOpacity = position === 0 ? 0.75 : 0.35;
+    const strokeOpacity = position === 0 ? 0.75 : 0.45;
+    const fillOpacity = position === 0 ? 0.65 : 0.35;
     
     return { strokeOpacity, fillOpacity };
   };
@@ -1501,7 +1501,7 @@ const R8R: React.FC<R8RProps> = ({
                       y={line.y2 + Math.sin(line.angle) * 14}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize={internalChartState[index]?.highlighted ? "17" : "11"}
+                      fontSize={internalChartState[index]?.highlighted ? "15" : "11"}
                       fill={currentTheme.textColor}
                       fontWeight="600"
                       style={{ 
@@ -1685,13 +1685,13 @@ const R8R: React.FC<R8RProps> = ({
                   cursor: 'pointer',
                   padding: '4px 6px',
                   borderRadius: '4px',
-                  background: activeFootnote === index ? currentTheme.textColor : 'transparent',
-                  color: activeFootnote === index ? currentTheme.backgroundColor : currentTheme.textColor,
+                  background: activeFootnote === index ? `${currentTheme.legendTextColor}26` : 'transparent',
+                  color: activeFootnote === index ? currentTheme.legendTextColor : currentTheme.legendTextColor,
                   transition: 'all 0.2s ease',
                   fontSize: '10px',
                   fontWeight: '600',
-                  border: `1px solid ${activeFootnote === index ? currentTheme.backgroundColor : currentTheme.textColor}`,
-                  opacity: activeFootnote === index ? 1 : 0.5,
+                  border: `1px solid ${activeFootnote === index ? currentTheme.legendTextColor : currentTheme.legendTextColor}`,
+                  opacity: activeFootnote === index ? 1 : 0.25,
                 }}
               >
                 {footnote.label}
@@ -1704,7 +1704,7 @@ const R8R: React.FC<R8RProps> = ({
             textAlign: 'center',
             fontSize: '11px',
             lineHeight: '1.4',
-            color: currentTheme.textColor,
+            color: currentTheme.legendTextColor,
             opacity: activeFootnote !== null ? 1 : 0.6,
             fontStyle: activeFootnote !== null ? 'normal' : 'italic',
           }}>

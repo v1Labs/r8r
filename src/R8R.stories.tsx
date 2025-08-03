@@ -254,6 +254,54 @@ const qbChart = [
   { label: 'Wins', value: 0, maxValue: .8 }
 ];
 
+export const WithFootnotes: Story = {
+  args: {
+    data: qbData,
+    chart: qbChart,
+    width: 500,
+    theme: 'light',
+    showGrid: true,
+    showLabels: true,
+    showLegend: true,
+    legendBackgroundColor: '#f4f8f8',
+    legendTitle: 'QB Stats Per Game',
+    animationDuration: 200,
+    dataBorderRadius: 5,
+    placeholder: 'Footnotes: Click to explore',
+    activeFootnote: 0, // Start with first footnote active
+    colors: [
+      '#b0b7bc',
+      '#FFB612',
+      '#fb4a65',
+      '#741fba',
+      '#D3BC8D',
+      '#FB4F14'
+    ],
+    footnotes: [
+      {
+        label: 'a.',
+        note: 'Jackson has 3x more rushing yards per game than Mahomes.',
+        highlight: ['Patrick Mahomes', 'Lamar Jackson', 'Rushing Yds']
+      },
+      {
+        label: 'b.',
+        note: 'Brees and Manning had statistically very similar per game stats.',
+        highlight: ['Drew Brees', 'Peyton Manning']
+      },
+      {
+        label: 'c.',
+        note: 'Patrick Mahomes has the best per game passing yards and touchdowns.',
+        highlight: ['Patrick Mahomes', 'Passing Yds', 'Passing TDs']
+      },
+      {
+        label: 'd.',
+        note: 'Rodgers was sacked 2x more per game than Manning.',
+        highlight: ['Aaron Rodgers', 'Peyton Manning', 'Sacks']
+      }
+    ],
+  },
+};
+
 export const LightTheme: Story = {
   args: {
     data: comparisonData,
@@ -311,44 +359,5 @@ export const RetroTheme: Story = {
     legendTitle: 'Retro Theme',
     animationDuration: 300,
     dataBorderRadius: 8,
-  },
-};
-
-export const WithFootnotes: Story = {
-  args: {
-    data: qbData,
-    chart: qbChart,
-    width: 500,
-    theme: 'light',
-    showGrid: true,
-    showLabels: true,
-    showLegend: true,
-    legendTitle: 'QB Stats Per Game',
-    animationDuration: 200,
-    dataBorderRadius: 5,
-    placeholder: 'Footnotes: Click to explore',
-    activeFootnote: 0, // Start with first footnote active
-    footnotes: [
-      {
-        label: 'a.',
-        note: 'Jackson has 3x more rushing yards per game than Mahomes.',
-        highlight: ['Lamar Jackson', 'Patrick Mahomes', 'Rushing Yds']
-      },
-      {
-        label: 'b.',
-        note: 'Brees and Manning had statistically very similar per game stats.',
-        highlight: ['Drew Brees', 'Peyton Manning']
-      },
-      {
-        label: 'c.',
-        note: 'Patrick Mahomes has the best per game passing yards and touchdowns.',
-        highlight: ['Patrick Mahomes', 'Passing Yds', 'Passing TDs']
-      },
-      {
-        label: 'd.',
-        note: 'Rodgers was sacked 2x more per game than Manning.',
-        highlight: ['Aaron Rodgers', 'Peyton Manning', 'Sacks']
-      }
-    ],
   },
 };
